@@ -9,6 +9,9 @@ import greendroid.widget.item.SubtextItem;
 
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -47,7 +50,26 @@ public class AsxActivity extends GDListActivity{
 		}
 		else {
 			final String url = data.toString();
-			model = AsxModel.createModelFromUrl(url);
+			try {
+				model = AsxModel.createModelFromUrl(url);
+			} catch (final RuntimeException e) {
+
+				new AlertDialog.Builder(AsxActivity.this)
+				.setIcon(R.drawable.alert_dialog_icon)
+				.setTitle("無法下載播法清單")
+				.setMessage("請檢查裝置是否連接到互聯網。")
+				.setPositiveButton("確定", new OnClickListener() {
+
+					@Override
+					public void onClick(final DialogInterface arg0, final int arg1) {
+						AsxActivity.this.finish();
+					}
+
+				})
+				.create()
+				.show();
+				return;
+			}
 		}
 		Log.d("RTHK", model.toString());
 

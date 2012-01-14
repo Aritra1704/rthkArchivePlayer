@@ -81,6 +81,21 @@ public class ProgrammeActivity extends GDListActivity {
 			}
 		} catch (final IOException e) {
 			e.printStackTrace();
+
+			new AlertDialog.Builder(ProgrammeActivity.this)
+			.setIcon(R.drawable.alert_dialog_icon)
+			.setTitle("未能取得節目列表")
+			.setMessage("請檢查裝置是否連接到互聯網。")
+			.setPositiveButton("確定", new OnClickListener() {
+
+				@Override
+				public void onClick(final DialogInterface arg0, final int arg1) {
+
+				}
+
+			})
+			.create()
+			.show();
 		}
 
 		setListAdapter(adapter);
