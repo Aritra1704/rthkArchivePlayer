@@ -19,7 +19,7 @@ public class PlayerActivity extends Activity {
 	private PlayerMessageHandler _messagHandler;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.player);
 
@@ -27,12 +27,12 @@ public class PlayerActivity extends Activity {
 		_url = intent.getStringExtra(getString(R.string.key_url));
 
 		_messagHandler = createMessageHandler();
-		
+
 		_playButton = (Button) findViewById(R.id.playButton);
 		_playButton.setOnClickListener(new OnClickListener() {
 
 			@Override
-			public void onClick(View arg0) {
+			public void onClick(final View arg0) {
 				if (_isPlaying) {
 					stop();
 				}
@@ -45,32 +45,32 @@ public class PlayerActivity extends Activity {
 
 	private PlayerMessageHandler createMessageHandler() {
 		return new PlayerMessageHandler() {
-			
+
 			@Override
 			protected void playerStopped() {
 				_playButton.setEnabled(true);
 				_playButton.setText("Play");
 				_isPlaying = false;
 			}
-			
+
 			@Override
 			protected void playerStarted() {
 				_playButton.setEnabled(true);
 				_playButton.setText("Stop");
 				_isPlaying = true;
 			}
-			
+
 			@Override
-			protected void playerPCMFeedBuffer(boolean isPlaying,
-					int audioBufferSizeMs, int audioBufferCapacityMs) {
+			protected void playerPCMFeedBuffer(final boolean isPlaying,
+					final int audioBufferSizeMs, final int audioBufferCapacityMs) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
-			protected void playerException(Throwable t) {
+			protected void playerException(final Throwable t) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		};
 	}
@@ -84,10 +84,10 @@ public class PlayerActivity extends Activity {
 
 	private void stop() {
 		_playButton.setEnabled(false);
-		
-		if (_player != null) { 
-			_player.stop(); 
-			_player = null; 
+
+		if (_player != null) {
+			_player.stop();
+			_player = null;
 		}
 	}
 }

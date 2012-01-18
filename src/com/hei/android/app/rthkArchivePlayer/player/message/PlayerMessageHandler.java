@@ -42,7 +42,7 @@ public abstract class PlayerMessageHandler extends Handler {
 	 */
 	protected abstract void playerPCMFeedBuffer( boolean isPlaying, int audioBufferSizeMs, int audioBufferCapacityMs );
 
-	
+
 	/**
 	 * This method is called when the player is stopped.
 	 * Note: __after__ this method the method playerException might be also called.
@@ -57,7 +57,7 @@ public abstract class PlayerMessageHandler extends Handler {
 
 
 	@Override
-	public void handleMessage(Message msg) {
+	public void handleMessage(final Message msg) {
 		switch (msg.what) {
 		case PlayerMessage.START:
 			playerStarted();

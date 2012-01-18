@@ -22,15 +22,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import android.os.Message;
+import android.util.Log;
+
 import com.hei.android.app.rthkArchivePlayer.player.decoder.AsfDecoder;
 import com.hei.android.app.rthkArchivePlayer.player.decoder.Decoder;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessage;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessageHandler;
 import com.hei.android.app.rthkArchivePlayer.player.pcmFeed.ArrayPCMFeed;
 import com.hei.android.app.rthkArchivePlayer.player.pcmFeed.PCMFeed;
-
-import android.os.Message;
-import android.util.Log;
 
 
 /**
@@ -69,7 +69,7 @@ public class AsfPlayer {
 	////////////////////////////////////////////////////////////////////////////
 
 	protected AsfDecoder _decoder;
-	
+
 	protected boolean _stopped;
 
 	protected int _audioBufferCapacityMs;
@@ -469,12 +469,12 @@ public class AsfPlayer {
 
 		return (int)(((long) bytesconsumed) * channels * sampleRate * durationMs  / (1000L * samples));
 	}
-	
+
 
 	////////////////////////////////////////////////////////////////////////////
 	// Private
 	////////////////////////////////////////////////////////////////////////////
-	
+
 	private short[][] createDecodeBuffers( final int count, final Decoder.Info info ) {
 		final int size = PCMFeed.msToSamples( _decodeBufferCapacityMs, info.getSampleRate(), info.getChannels());
 

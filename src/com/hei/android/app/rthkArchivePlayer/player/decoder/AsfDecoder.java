@@ -28,7 +28,7 @@ public class AsfDecoder extends Decoder {
 	private static enum State { IDLE, RUNNING };
 
 	private static boolean libLoaded = false;
-	
+
 	{
 		loadLibrary();
 	}

@@ -95,8 +95,8 @@ public class AsxActivity extends GDListActivity{
 		if (tag instanceof AsxEntryModel) {
 			final AsxEntryModel model = (AsxEntryModel) tag;
 			final String url = model.getRef();
-//			final Uri uri = Uri.parse(url);
-//			final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+			//			final Uri uri = Uri.parse(url);
+			//			final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
 			final Intent intent = new Intent(this, PlayerActivity.class);
 			intent.putExtra(getString(R.string.key_url), url);
 			startActivity(intent);
