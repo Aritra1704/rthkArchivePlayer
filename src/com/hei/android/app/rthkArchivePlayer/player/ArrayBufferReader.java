@@ -18,7 +18,6 @@
 package com.hei.android.app.rthkArchivePlayer.player;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import android.util.Log;
 
@@ -68,23 +67,28 @@ public class ArrayBufferReader implements Runnable {
 
 	private static String LOG = "ArrayBufferReader";
 
-	int capacity;
+	int _capacity;
 
-	private final Buffer[] buffers;
+	private final Buffer[] _buffers;
 
 	/**
 	 * The buffer to be write into.
 	 */
-	private int indexMine;
+	private int _indexMine;
 
 	/**
 	 * The index of the buffer last returned in the next() method.
 	 */
-	private int indexBlocked;
+	private int _indexBlocked;
 
-	private boolean stopped;
+	private boolean _stopped;
 
-	private final InputStream is;
+	private boolean _sought;
+	
+	private boolean _bufferReset;
+
+	private final MMSInputStream _mmsStream;
+
 
 
 	////////////////////////////////////////////////////////////////////////////
@@ -99,20 +103,20 @@ public class ArrayBufferReader implements Runnable {
 	 *
 	 * @param is the input stream
 	 */
-	public ArrayBufferReader( final int capacity, final InputStream is ) {
-		this.capacity = capacity;
-		this.is = is;
+	public ArrayBufferReader( final int capacity, final MMSInputStream is ) {
+		this._capacity = capacity;
+		this._mmsStream = is;
 
 		Log.d( LOG, "init(): capacity=" + capacity );
 
-		buffers = new Buffer[3];
+		_buffers = new Buffer[30];
 
-		for (int i=0; i < buffers.length; i++) {
-			buffers[i] = new Buffer( capacity );
+		for (int i=0; i < _buffers.length; i++) {
+			_buffers[i] = new Buffer( capacity );
 		}
 
-		indexMine = 0;
-		indexBlocked = buffers.length-1;
+		_indexMine = 0;
+		_indexBlocked = _buffers.length-1;
 	}
 
 
@@ -125,7 +129,7 @@ public class ArrayBufferReader implements Runnable {
 	 */
 	public synchronized void setCapacity( final int capacity ) {
 		Log.d( LOG, "setCapacity(): " + capacity );
-		this.capacity = capacity;
+		this._capacity = capacity;
 	}
 
 
@@ -136,61 +140,95 @@ public class ArrayBufferReader implements Runnable {
 	public void run() {
 		Log.d( LOG, "run() started...." );
 
-		int cap = capacity;
+		int cap = _capacity;
 		int total = 0;
 
-		while (!stopped) {
-			Buffer buffer = buffers[ indexMine ];
+		while (!_stopped) {
+			Buffer buffer = _buffers[ _indexMine ];
 			total = 0;
 
 			if (cap != buffer.data.length) {
 				Log.d( LOG, "run() capacity changed: " + buffer.data.length + " -> " + cap);
-				buffers[ indexMine ] = buffer = null;
-				buffers[ indexMine ] = buffer = new Buffer( cap );
+				_buffers[ _indexMine ] = buffer = null;
+				_buffers[ _indexMine ] = buffer = new Buffer( cap );
 			}
 
-			while (!stopped && total < cap) {
-				try {
-					final int n = is.read( buffer.data, total, cap - total );
+			synchronized (this) {
+				while (!_stopped && total < cap) {
+					try {
+						final int n = _mmsStream.read( buffer.data, total, cap - total );
 
-					if (n == -1) {
-						stopped = true;
-					} else {
-						total += n;
+						if (n == -1) {
+							_stopped = true;
+							Log.e( LOG, "run() the stream ended.");
+						} else {
+							total += n;
+						}
 					}
-				}
-				catch (final IOException e) {
-					Log.e( LOG, "Exception when reading: " + e );
-					stopped = true;
-				}
+					catch (final IOException e) {
+						Log.e( LOG, "Exception when reading: " + e );
+						_stopped = true;
+					}
+				}	
 			}
 
 			buffer.size = total;
 
 			synchronized (this) {
-				notify();
-				final int indexNew = (indexMine + 1) % buffers.length;
+				notifyAll();
 
-				while (!stopped && indexNew == indexBlocked) {
+				final int indexNew = (_indexMine + 1) % _buffers.length;
+
+				while (!_stopped && indexNew == _indexBlocked && !_sought) {
 					Log.d( LOG, "run() waiting...." );
 					try { wait(); } catch (final InterruptedException e) {}
 					Log.d( LOG, "run() awaken" );
 				}
+				
+				_indexMine = indexNew;
+				cap = _capacity;
 
-				indexMine = indexNew;
-				cap = capacity;
+				if (_sought) {
+					_indexBlocked = (_indexMine + _buffers.length - 1) % _buffers.length;
+					_sought = false;
+					_bufferReset = true;
+				}
 			}
 		}
 
 		Log.d( LOG, "run() stopped." );
 	}
 
+	public synchronized boolean seek(double time) {
+		Log.d( LOG, "seek() notify all" );
+		notifyAll();
+
+		boolean sought = false;
+		try {
+			sought = _mmsStream.seek(time);
+			_sought = sought;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			while (_sought) {
+				Log.d( LOG, "seek() waiting...." );
+				wait();
+				Log.d( LOG, "seek() awaken" );
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return sought;
+	}
 
 	/**
 	 * Stops the thread - the object cannot be longer used.
 	 */
 	public synchronized void stop() {
-		stopped = true;
+		_stopped = true;
 		notify();
 	}
 
@@ -199,7 +237,7 @@ public class ArrayBufferReader implements Runnable {
 	 * Returns true if this thread was stopped.
 	 */
 	public boolean isStopped() {
-		return stopped;
+		return _stopped;
 	}
 
 
@@ -209,23 +247,33 @@ public class ArrayBufferReader implements Runnable {
 	 * Blocks the caller until a buffer is ready.
 	 */
 	public synchronized Buffer next() {
-		final int indexNew = (indexBlocked + 1) % buffers.length;
+		if (_bufferReset) {
+			_bufferReset = false;
+		}
+		
+		int indexNew = (_indexBlocked + 1) % _buffers.length;
 
-		while (!stopped && indexNew == indexMine) {
+		while (!_stopped && indexNew == _indexMine) {
 			Log.d( LOG, "next() waiting...." );
 			try { wait(); } catch (final InterruptedException e) {}
 			Log.d( LOG, "next() awaken" );
+			
+			if (_bufferReset) {
+				Log.d(LOG, "Buffer reset while waiting.");
+				indexNew = (_indexBlocked + 1) % _buffers.length;
+				_bufferReset = false;
+			}
 		}
 
-		if (indexNew == indexMine) {
+		if (indexNew == _indexMine) {
 			return null;
 		}
 
-		indexBlocked = indexNew;
+		_indexBlocked = indexNew;
 
-		notify();
+		notifyAll();
 
-		return buffers[ indexBlocked ];
+		return _buffers[ _indexBlocked ];
 	}
 
 }

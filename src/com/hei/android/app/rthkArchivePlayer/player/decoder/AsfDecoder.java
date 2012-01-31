@@ -65,7 +65,7 @@ public class AsfDecoder extends Decoder {
 		state = State.RUNNING;
 
 		return info;
-	}
+	}	
 
 
 	/**
@@ -118,7 +118,6 @@ public class AsfDecoder extends Decoder {
 	private static synchronized void loadLibrary() {
 		if (!libLoaded) {
 			System.loadLibrary("asf");
-			System.loadLibrary("mms");
 
 			libLoaded = true;
 		}

@@ -44,6 +44,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 	protected int _channels;
 	protected int _bufferSizeInMs;
 	protected int _bufferSizeInBytes;
+	protected int _playbackOffset;
 
 
 	/**
@@ -56,8 +57,14 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 	 * True iff the AudioTrack is playing.
 	 */
 	protected boolean _isPlaying;
-
+	
+	protected boolean _togglePause;
+	
 	protected boolean _stopped;
+	
+	protected boolean _flush;
+	
+	protected AudioTrack _audioTrack;
 
 
 	/**
@@ -126,6 +133,49 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 	public final int getBufferSizeInMs() {
 		return _bufferSizeInMs;
 	}
+	
+	
+	public void resetPlaybackTime(final double time) {
+		final int timeInMs = (int) (time * 1000);
+		final int head = _audioTrack.getPlaybackHeadPosition();
+		final int headChannel = head * _channels;
+		final int headTime = samplesToMs(headChannel, _sampleRate, _channels);
+		_playbackOffset += timeInMs - headTime - _playbackOffset;
+	}
+	
+	
+	public synchronized void pause() {
+		_togglePause = true;
+		notifyAll();
+		while(_togglePause) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+
+	public synchronized void resume() {
+		_togglePause = true;
+		notifyAll();
+		while(_togglePause) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public synchronized void flush() {
+		if (_audioTrack != null) {
+			_audioTrack.flush();
+			_audioTrack.setPlaybackPositionUpdateListener( this );
+			_audioTrack.setPositionNotificationPeriod( msToSamples( 200, _sampleRate, _channels ));
+		}
+	}
 
 
 	/**
@@ -135,7 +185,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 	 */
 	public synchronized void stop() {
 		_stopped = true;
-		notify();
+		notifyAll();
 	}
 
 
@@ -199,11 +249,18 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 	@Override
 	public void onPeriodicNotification( final AudioTrack track ) {
 		if (_playerMessageHandler != null) {
-			final int buffered = _writtenTotal - track.getPlaybackHeadPosition()*_channels;
+			final int playbackHead = track.getPlaybackHeadPosition();
+			final int playbackHeadChannel = playbackHead*_channels;
+			final int buffered = _writtenTotal - playbackHeadChannel;
 			final int ms = samplesToMs( buffered, _sampleRate, _channels );
 
-			final Message msg = PlayerMessage.createBufferUpdateMessage(_isPlaying, ms, _bufferSizeInMs);
+			final Message bufferMsg = PlayerMessage.createBufferUpdateMessage(_isPlaying, ms, _bufferSizeInMs);
+			_playerMessageHandler.sendMessage(bufferMsg);
+
+			final int currentPosInMs = samplesToMs(playbackHeadChannel, _sampleRate, _channels) + _playbackOffset;
+			final Message msg = PlayerMessage.createCurrentPosUpdateMessage((double) (currentPosInMs) / 1000);
 			_playerMessageHandler.sendMessage(msg);
+			PlayerMessage.createCurrentPosUpdateMessage(0);
 		}
 	}
 
@@ -221,7 +278,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 				+ ", bufferSizeInBytes=" + _bufferSizeInBytes
 				+ " (" + _bufferSizeInMs + " ms)");
 
-		final AudioTrack atrack = new AudioTrack(
+		_audioTrack = new AudioTrack(
 				AudioManager.STREAM_MUSIC,
 				_sampleRate,
 				_channels == 1 ?
@@ -231,19 +288,46 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 							_bufferSizeInBytes,
 							AudioTrack.MODE_STREAM );
 
-		atrack.setPlaybackPositionUpdateListener( this );
-		atrack.setPositionNotificationPeriod( msToSamples( 200, _sampleRate, _channels ));
+		_audioTrack.setPlaybackPositionUpdateListener( this );
+		_audioTrack.setPositionNotificationPeriod( msToSamples( 200, _sampleRate, _channels ));
 
 		_isPlaying = false;
 
 		while (!_stopped) {
+			
+			synchronized (this) {
+				if(_togglePause) {
+					_audioTrack.pause();
+					_togglePause = false;
+					notifyAll();
+
+					while (!_togglePause) {
+						try {
+							wait();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}	
+					}
+					
+					_audioTrack.play();
+					_togglePause = false;
+					notifyAll();
+				}
+			}
+			
 			// fetch the samples into our "local" variable lsamples:
 			int ln = acquireSamples();
-
+			
 			if (_stopped) {
 				releaseSamples();
 				break;
 			}
+			
+			if (_togglePause) {
+				releaseSamples();
+				continue;
+			}
+
 
 			// samples written to AudioTrack in this round:
 			int writtenNow = 0;
@@ -254,7 +338,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 					try { Thread.sleep( 50 ); } catch (final InterruptedException e) {}
 				}
 
-				final int written = atrack.write( _lsamples, writtenNow, ln );
+				final int written = _audioTrack.write( _lsamples, writtenNow, ln );
 
 				if (written < 0) {
 					Log.e( LOG, "error in playback feed: " + written );
@@ -263,14 +347,14 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 				}
 
 				_writtenTotal += written;
-				final int buffered = _writtenTotal - atrack.getPlaybackHeadPosition()*_channels;
+				final int buffered = _writtenTotal - _audioTrack.getPlaybackHeadPosition()*_channels;
 
-				// Log.d( LOG, "PCM fed by " + ln + " and written " + written + " samples - buffered " + buffered);
-
+				Log.d( LOG, "PCM fed by " + ln + " and written " + written + " - buffered " + buffered);
+				
 				if (!_isPlaying) {
 					if (buffered*2 >= _bufferSizeInBytes) {
 						Log.d( LOG, "start of AudioTrack - buffered " + buffered + " samples");
-						atrack.play();
+						_audioTrack.play();
 						_isPlaying = true;
 					}
 					else {
@@ -286,10 +370,10 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 		}
 
 		if (_isPlaying) {
-			atrack.stop();
+			_audioTrack.stop();
 		}
-		atrack.flush();
-		atrack.release();
+		_audioTrack.flush();
+		_audioTrack.release();
 
 		Log.d( LOG, "run() stopped." );
 	}

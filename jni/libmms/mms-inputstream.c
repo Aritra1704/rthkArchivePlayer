@@ -135,6 +135,72 @@ JNIEXPORT void JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInpu
     ALOG_TRACE( "nativeClose() end" );
 }
 
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeGetLength
+ * Signature: (I)D
+ */
+JNIEXPORT jdouble JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetLength
+  (JNIEnv *env, jobject thiz, jint jminfo)
+{
+    ALOG_TRACE( "nativeGetLength() start" );
+
+    MMSInfo *minfo = (MMSInfo*) jminfo;
+
+    if (!minfo) return -1;
+
+    double length = mmsx_get_time_length( minfo->mms );
+
+    ALOG_TRACE( "nativeGetLength() end" );
+
+    return length;
+}
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeSeek
+ * Signature: (ID)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeSeek
+  (JNIEnv *env, jobject thiz, jint jminfo, jdouble time)
+{
+    ALOG_TRACE( "nativeSeek() start" );
+
+    MMSInfo *minfo = (MMSInfo*) jminfo;
+
+    if (!minfo) return JNI_FALSE;
+
+    jboolean sought = mmsx_time_seek(NULL, minfo->mms, time) > 0;
+
+    ALOG_TRACE( "nativeSeek() end" );
+
+    return sought;
+}
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeGetHeader
+ * Signature: (I)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetHeader
+  (JNIEnv * env, jobject thiz, jint jminfo)
+{
+    ALOG_TRACE( "nativeGetHeader() start" );
+
+    MMSInfo *minfo = (MMSInfo*) jminfo;
+
+    uint32_t  headerLen = mmsx_get_asf_header_len (minfo->mms);
+    char* header = (char*) malloc (headerLen);
+    mmsx_peek_header(minfo->mms, header, headerLen);
+
+    jbyteArray jheader = (*env)->NewByteArray(env, headerLen);
+    (*env)->SetByteArrayRegion( env, jheader, 0, headerLen, header );
+
+    ALOG_TRACE( "nativeGetHeader() end" );
+
+    return jheader;
+}
+
 
 int android_string_utf16(void *android_jni, char *dest, char *src, int dest_len)
 {

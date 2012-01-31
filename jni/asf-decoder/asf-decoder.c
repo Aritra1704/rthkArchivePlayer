@@ -16,7 +16,7 @@
 ** along with this program. If not, see <http://www.gnu.org/licenses/>.
 **/
 
-#define AACD_MODULE "AsfDecoder"
+#define AACD_MODULE "AsfDecoder[native]"
 
 #include "asf-decoder.h"
 #include "asf-common.h"

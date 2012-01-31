@@ -292,7 +292,7 @@ static long aacd_ffwma_start( AACDCommonInfo *cinfo, void *ext, unsigned char *b
     {
         char s[80];
         av_strerror( err, s, 80);
-        AACD_ERROR("start() cannot open demuxer - [%d] - $s", err, s );
+        AACD_ERROR("start() cannot open demuxer - [%d] - %s", err, s );
 
         // we must dealloc what we allocated locally:
         aacd_ff_destroy_byteioctx( pb );

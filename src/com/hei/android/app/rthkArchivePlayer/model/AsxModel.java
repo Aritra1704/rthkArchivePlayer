@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -150,7 +149,11 @@ public class AsxModel {
 			int length = safeRead(stream, buffer);
 
 			while (length != -1) {
-				big5Builder.append(new String(buffer, 0, length, Charset.forName("Big5")));
+				try {
+					big5Builder.append(new String(buffer, 0, length, "Big5"));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
 				length = safeRead(stream, buffer);
 			}
 

@@ -112,7 +112,7 @@ public class ArrayPCMFeed extends PCMFeed {
 	 */
 	@Override
 	protected synchronized int acquireSamples() {
-		while (_n == 0 && !_stopped) {
+		while (_n == 0 && !_stopped && !_togglePause) {
 			try { wait(); } catch (final InterruptedException e) {}
 		}
 
@@ -121,7 +121,7 @@ public class ArrayPCMFeed extends PCMFeed {
 
 		_samples = null;
 		_n = 0;
-		notify();
+		notifyAll();
 
 		return ln;
 	}

@@ -38,7 +38,7 @@ public class MMSInputStream extends InputStream {
 	private static final String LOG = "MMSInputStream";
 
 	private static boolean libLoaded = false;
-
+	
 
 	////////////////////////////////////////////////////////////////////////////
 	// Attributes
@@ -48,7 +48,16 @@ public class MMSInputStream extends InputStream {
 	 * The native handler.
 	 */
 	private final int _nativeHandlerPtr;
-
+	
+	/**
+	 * Header
+	 */
+	private final byte[] _header;
+	
+	/**
+	 * Position of current read head
+	 */
+	private int _headerReadPos;
 
 	////////////////////////////////////////////////////////////////////////////
 	// Constructors
@@ -58,6 +67,8 @@ public class MMSInputStream extends InputStream {
 		ensureLibLoaded();
 
 		_nativeHandlerPtr = nativeConnect( url );
+		_header = nativeGetHeader(_nativeHandlerPtr);
+		_headerReadPos = _header.length;
 	}
 
 
@@ -85,6 +96,14 @@ public class MMSInputStream extends InputStream {
 
 	@Override
 	public int read(final byte[] b, final int off, final int len) throws IOException {
+		if(_headerReadPos < _header.length) {
+			int pos = 0;
+			for(_headerReadPos += off; pos < len && _headerReadPos < _header.length; pos++, _headerReadPos++) {
+				b[pos] = _header[_headerReadPos];
+			}
+			return pos;
+		}
+		
 		return nativeRead( _nativeHandlerPtr, b, off, len );
 	}
 
@@ -93,7 +112,34 @@ public class MMSInputStream extends InputStream {
 	public void close() throws IOException {
 		nativeClose( _nativeHandlerPtr );
 	}
-
+	
+	
+	
+	/**
+	 * Get the length in seconds of the file
+	 * @throws IOException
+	 */
+	public double getLength() throws IOException {
+		final double length = nativeGetLength(_nativeHandlerPtr);
+		
+		if (length < 0) {
+			throw new IOException("Failed to get the length of the file.");
+		}
+		
+		return length;
+	}
+	
+	
+	
+	public boolean seek(double time) throws IOException {
+		final boolean sought = nativeSeek(_nativeHandlerPtr, time);
+		
+		if (sought) {
+			_headerReadPos = 0;
+		}
+		
+		return sought;
+	}
 
 	////////////////////////////////////////////////////////////////////////////
 	// Private
@@ -144,10 +190,23 @@ public class MMSInputStream extends InputStream {
 			throw new RuntimeException( e );
 		}
 	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		nativeClose(_nativeHandlerPtr);
+	};
 
 
 	private native int nativeConnect( String url ) throws IOException;
+	
 	private native int nativeRead( int nativeHandlerPtr, byte[] b, int off, int len ) throws IOException;
+	
 	private native void nativeClose( int nativeHandlerPtr ) throws IOException;
+	
+	private native double nativeGetLength( int nativeHandlerPtr ) throws IOException;
+	
+	private native boolean nativeSeek( int nativeHandlerPtr, double time ) throws IOException;
+	
+	private native byte[] nativeGetHeader(int nativeHandlerPtr) throws IOException;
 
 }

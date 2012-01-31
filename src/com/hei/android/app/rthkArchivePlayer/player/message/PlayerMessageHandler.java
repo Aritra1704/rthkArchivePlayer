@@ -28,7 +28,7 @@ public abstract class PlayerMessageHandler extends Handler {
 	/**
 	 * This method is called when the player is started.
 	 */
-	protected abstract void playerStarted();
+	protected abstract void playerStarted(double length);
 
 
 	/**
@@ -40,7 +40,7 @@ public abstract class PlayerMessageHandler extends Handler {
 	 * @param audioBufferSizeMs the buffered audio data expressed in milliseconds of playing
 	 * @param audioBufferCapacityMs the total capacity of audio buffer expressed in milliseconds of playing
 	 */
-	protected abstract void playerPCMFeedBuffer( boolean isPlaying, int audioBufferSizeMs, int audioBufferCapacityMs );
+	protected abstract void playerBufferStateUpdate( boolean isPlaying, int audioBufferSizeMs, int audioBufferCapacityMs );
 
 
 	/**
@@ -56,11 +56,18 @@ public abstract class PlayerMessageHandler extends Handler {
 	protected abstract void playerException( Throwable t );
 
 
+	/**
+	 * This method is called when the current position is updated
+	 */
+	protected abstract void playerCurrentPosUpdate( double pos );
+
+
 	@Override
 	public void handleMessage(final Message msg) {
 		switch (msg.what) {
 		case PlayerMessage.START:
-			playerStarted();
+			final double length = PlayerMessage.getLength(msg);
+			playerStarted(length);
 			break;
 
 		case PlayerMessage.BUFFER_UPDATE:
@@ -68,7 +75,7 @@ public abstract class PlayerMessageHandler extends Handler {
 			final int audioBufferSize = PlayerMessage.getAudioBufferSize(msg);
 			final int audioBufferCapacity = PlayerMessage.getAudioBufferCapacity(msg);
 
-			playerPCMFeedBuffer(isPlaying, audioBufferSize, audioBufferCapacity);
+			playerBufferStateUpdate(isPlaying, audioBufferSize, audioBufferCapacity);
 			break;
 
 		case PlayerMessage.STOP:
@@ -78,6 +85,11 @@ public abstract class PlayerMessageHandler extends Handler {
 		case PlayerMessage.EXCEPTION:
 			final Throwable exception = PlayerMessage.getException(msg);
 			playerException(exception);
+			break;
+			
+		case PlayerMessage.CURRENT_POS_UPDATE:
+			final double currentPos = PlayerMessage.getCurrentPos(msg);
+			playerCurrentPosUpdate(currentPos);
 			break;
 
 		default:

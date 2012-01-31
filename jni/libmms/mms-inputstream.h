@@ -51,6 +51,31 @@ JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInpu
 JNIEXPORT void JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeClose
   (JNIEnv *, jobject, jint);
 
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeGetLength
+ * Signature: (I)D
+ */
+JNIEXPORT jdouble JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetLength
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeSeek
+ * Signature: (ID)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeSeek
+  (JNIEnv *, jobject, jint, jdouble);
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Method:    nativeGetHeader
+ * Signature: (I)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetHeader
+  (JNIEnv *, jobject, jint);
+
+
 #ifdef __cplusplus
 }
 #endif

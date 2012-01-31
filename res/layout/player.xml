@@ -8,10 +8,21 @@
         android:id="@+id/playButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Play" />
+        android:text="@+string/play" />
 
     <SeekBar
         android:id="@+id/playerSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    
+    <Button
+        android:id="@+id/playeSkipButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@+string/skip" />
+    
+    <TextView 
+        android:id="@+id/playerLengthText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

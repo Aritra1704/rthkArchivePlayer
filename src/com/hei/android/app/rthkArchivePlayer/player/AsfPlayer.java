@@ -17,9 +17,6 @@
  **/
 package com.hei.android.app.rthkArchivePlayer.player;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URL;
 import java.net.URLConnection;
 
 import android.os.Message;
@@ -70,7 +67,9 @@ public class AsfPlayer {
 
 	protected AsfDecoder _decoder;
 
+	protected boolean _paused;
 	protected boolean _stopped;
+	protected double _seekTime = -1;
 
 	protected int _audioBufferCapacityMs;
 	protected int _decodeBufferCapacityMs;
@@ -220,7 +219,7 @@ public class AsfPlayer {
 					}
 				}
 			}
-		}).start();
+		}, "AsfPlayer playAsync()").start();
 	}
 
 
@@ -239,19 +238,12 @@ public class AsfPlayer {
 	 * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
 	 */
 	public void play( final String url, final int expectedKBitSecRate ) throws Exception {
-		if (url.startsWith( "mms://" )) {
-			play( new MMSInputStream( url ), expectedKBitSecRate );
+		if ("mms://".regionMatches(0, url, 0, 6)) {
+			final MMSInputStream mmsStream = new MMSInputStream( url );
+			play( mmsStream, expectedKBitSecRate );
 		}
-		else if (url.indexOf( ':' ) > 0) {
-			final URLConnection cn = new URL( url ).openConnection();
-			cn.connect();
-
-			dumpHeaders( cn );
-
-			// TODO: try to get the expectedKBitSecRate from headers
-			play( cn.getInputStream(), expectedKBitSecRate);
-		} else {
-			play( new FileInputStream( url ), expectedKBitSecRate );
+		else {
+			throw new IllegalArgumentException("Only URL with MMS protocol is supported");
 		}
 	}
 
@@ -260,7 +252,7 @@ public class AsfPlayer {
 	 * Plays a stream synchronously.
 	 * @param is the input stream
 	 */
-	public void play( final InputStream is ) throws Exception {
+	public void play( final MMSInputStream is ) throws Exception {
 		play( is, -1 );
 	}
 
@@ -270,11 +262,13 @@ public class AsfPlayer {
 	 * @param is the input stream
 	 * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
 	 */
-	public final void play( final InputStream is, int expectedKBitSecRate ) throws Exception {
+	public final void play( final MMSInputStream is, int expectedKBitSecRate ) throws Exception {
 		_stopped = false;
+		_paused = false;
 
 		if (_messageHandler != null) {
-			final Message msg = PlayerMessage.createStartMessage();
+			final double length = is.getLength();
+			final Message msg = PlayerMessage.createStartMessage(length);
 			_messageHandler.sendMessage(msg);
 		}
 
@@ -288,6 +282,18 @@ public class AsfPlayer {
 		playImpl( is, expectedKBitSecRate );
 	}
 
+	public synchronized void seek( final double sec ) {
+		_seekTime = sec;
+	}
+
+	public synchronized void pause() {
+		_paused = true;
+	}
+
+	public synchronized void resume() {
+		_paused = false;
+		notify();
+	}
 
 	/**
 	 * Stops the execution thread.
@@ -307,11 +313,11 @@ public class AsfPlayer {
 	 * @param is the input stream
 	 * @param expectedKBitSecRate the expected average bitrate in kbit/sec
 	 */
-	protected void playImpl( final InputStream is, int expectedKBitSecRate ) throws Exception {
+	protected void playImpl( final MMSInputStream is, int expectedKBitSecRate ) throws Exception {
 		final ArrayBufferReader reader = new ArrayBufferReader(
 				computeInputBufferSize( expectedKBitSecRate, _decodeBufferCapacityMs ),
 				is );
-		new Thread( reader ).start();
+		new Thread( reader, "ArrayBufferReader").start();
 
 		ArrayPCMFeed pcmfeed = null;
 		Thread pcmfeedThread = null;
@@ -342,10 +348,41 @@ public class AsfPlayer {
 			int decodeBufferIndex = 0;
 
 			pcmfeed = createArrayPCMFeed( info );
-			pcmfeedThread = new Thread( pcmfeed );
+			pcmfeedThread = new Thread( pcmfeed, "PCM Feed" );
 			pcmfeedThread.start();
 
 			do {
+				synchronized (this) {
+					while (_paused) {
+						pcmfeed.pause();
+
+						try {
+							wait();	
+						} catch (InterruptedException e) {
+							Log.e(LOG, e.getMessage());
+						}
+
+						pcmfeed.resume();
+					}
+					
+					if (_seekTime >= 0) {
+						pcmfeed.pause();
+						final boolean sought = reader.seek(_seekTime);
+						if (sought) {
+							Log.d(LOG, "Sought to " + _seekTime + " successfully.");
+							pcmfeed.resetPlaybackTime(_seekTime);
+							pcmfeed.flush();
+							_decoder.stop();
+							_decoder.start(reader);
+							_seekTime = -1;
+						}
+						else {
+							Log.d(LOG, "Seek to " + _seekTime + " failed.");
+						}
+						pcmfeed.resume();
+					}
+				}
+
 				final long tsStart = System.currentTimeMillis();
 
 				info = _decoder.decode( decodeBuffer, decodeBuffer.length );
@@ -372,6 +409,7 @@ public class AsfPlayer {
 				}
 
 				decodeBuffer = decodeBuffers[ ++decodeBufferIndex % 3 ];
+
 			} while (!_stopped);
 		}
 		finally {
