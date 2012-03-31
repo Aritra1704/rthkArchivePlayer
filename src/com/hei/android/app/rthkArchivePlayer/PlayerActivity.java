@@ -13,8 +13,10 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-import com.hei.android.app.rthkArchivePlayer.player.AsfPlayer;
+import com.hei.android.app.rthkArchivePlayer.player.AudioPlayer;
+import com.hei.android.app.rthkArchivePlayer.player.asfPlayer.AsfPlayer;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessageHandler;
+import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.MMSPlayer;
 
 public class PlayerActivity extends Activity {
 	private static final String STATUS_BUFFERING = "Buffering...";
@@ -24,7 +26,7 @@ public class PlayerActivity extends Activity {
 	private TextView _statusText;
 	private SeekBar _seekBar;
 	
-	private AsfPlayer _player;
+	private AudioPlayer _player;
 	private PlayerMessageHandler _messagHandler;
 	
 	private String _url;
@@ -169,8 +171,16 @@ public class PlayerActivity extends Activity {
 	private void start() {
 		_wifiLock.acquire();
 		_playButton.setEnabled(false);
-		_player = new AsfPlayer(_messagHandler);
-		_player.playAsync(_url);
+		
+		try {
+			_player = new AsfPlayer(this, _messagHandler, -1);
+			_player.playAsync(_url);
+			
+		}
+		catch (Exception e) {
+			_player = new MMSPlayer(_messagHandler);
+			_player.playAsync(_url);
+		}
 	}
 	
 	

@@ -15,11 +15,13 @@
  ** You should have received a copy of the GNU General Public License
  ** along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
-package com.hei.android.app.rthkArchivePlayer.player;
+package com.hei.android.app.rthkArchivePlayer.player.mmsPlayer;
 
 import java.io.IOException;
 
 import android.util.Log;
+
+import com.hei.android.app.rthkArchivePlayer.player.decoder.BufferReader;
 
 
 /**
@@ -46,24 +48,7 @@ import android.util.Log;
  *  }
  * </pre>
  */
-public class ArrayBufferReader implements Runnable {
-
-	public static class Buffer {
-		private final byte[] data;
-		private int size;
-
-		Buffer( final int capacity ) {
-			data = new byte[ capacity ];
-		}
-
-		public final byte[] getData() {
-			return data;
-		}
-
-		public final int getSize() {
-			return size;
-		}
-	}
+public class ArrayBufferReader implements BufferReader, Runnable {
 
 	private static String LOG = "ArrayBufferReader";
 
@@ -104,8 +89,8 @@ public class ArrayBufferReader implements Runnable {
 	 * @param is the input stream
 	 */
 	public ArrayBufferReader( final int capacity, final MMSInputStream is ) {
-		this._capacity = capacity;
-		this._mmsStream = is;
+		_capacity = capacity;
+		_mmsStream = is;
 
 		Log.d( LOG, "init(): capacity=" + capacity );
 
@@ -147,8 +132,9 @@ public class ArrayBufferReader implements Runnable {
 			Buffer buffer = _buffers[ _indexMine ];
 			total = 0;
 
-			if (cap != buffer.data.length) {
-				Log.d( LOG, "run() capacity changed: " + buffer.data.length + " -> " + cap);
+			final byte[] bufferData = buffer.getData();
+			if (cap != bufferData.length) {
+				Log.d( LOG, "run() capacity changed: " + bufferData.length + " -> " + cap);
 				_buffers[ _indexMine ] = buffer = null;
 				_buffers[ _indexMine ] = buffer = new Buffer( cap );
 			}
@@ -156,7 +142,9 @@ public class ArrayBufferReader implements Runnable {
 			synchronized (this) {
 				while (!_stopped && total < cap) {
 					try {
-						final int n = _mmsStream.read( buffer.data, total, cap - total );
+
+						final byte[] data = buffer.getData();
+						final int n = _mmsStream.read( data, total, cap - total );
 
 						if (n == -1) {
 							_stopped = true;
@@ -172,7 +160,7 @@ public class ArrayBufferReader implements Runnable {
 				}	
 			}
 
-			buffer.size = total;
+			buffer.setSize(total);
 
 			synchronized (this) {
 				notifyAll();
@@ -203,13 +191,8 @@ public class ArrayBufferReader implements Runnable {
 		Log.d( LOG, "seek() notify all" );
 		notifyAll();
 
-		boolean sought = false;
-		try {
-			sought = _mmsStream.seek(time);
-			_sought = sought;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		final boolean sought = _mmsStream.seek(time);
+		_sought = sought;
 
 		try {
 			while (_sought) {
@@ -218,6 +201,7 @@ public class ArrayBufferReader implements Runnable {
 				Log.d( LOG, "seek() awaken" );
 			}
 		} catch (InterruptedException e) {
+			Log.e(LOG, e.getMessage());
 			e.printStackTrace();
 		}
 

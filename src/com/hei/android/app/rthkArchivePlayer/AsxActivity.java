@@ -3,10 +3,13 @@ package com.hei.android.app.rthkArchivePlayer;
 import greendroid.app.ActionBarActivity;
 import greendroid.app.GDListActivity;
 import greendroid.widget.ActionBar;
+import greendroid.widget.ActionBar.OnActionBarListener;
+import greendroid.widget.ActionBarItem;
 import greendroid.widget.ItemAdapter;
 import greendroid.widget.item.Item;
 import greendroid.widget.item.SubtextItem;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.app.AlertDialog;
@@ -75,6 +78,9 @@ public class AsxActivity extends GDListActivity{
 
 		final ItemAdapter adapter = new ItemAdapter(this);
 		final List<AsxEntryModel> entries = model.getEntries();
+		final int entrySize = entries.size();
+		final List<String> urls = new ArrayList<String>(entrySize);
+		
 		for (final AsxEntryModel entry : entries) {
 			final String title = entry.getTitle();
 			final String abs = entry.getAbstract();
@@ -83,9 +89,24 @@ public class AsxActivity extends GDListActivity{
 			entryItem.setTag(entry);
 			entryItem.enabled = true;
 			adapter.add(entryItem);
+			
+			final String url = entry.getRef();
+			urls.add(url);
 		}
 
 		setListAdapter(adapter);
+		
+
+		addActionBarItem(ActionBarItem.Type.Star);
+		getActionBar().setOnActionBarListener(new OnActionBarListener() {
+			
+			@Override
+			public void onActionBarItemClicked(int position) {
+				final Intent intent = new Intent(AsxActivity.this, DownloadActivity.class);
+				intent.putExtra(getString(R.string.key_playlist), urls.toArray(new String[entrySize]));
+				startActivity(intent);
+			}
+		});
 	}
 
 	@Override
@@ -101,6 +122,6 @@ public class AsxActivity extends GDListActivity{
 			intent.putExtra(getString(R.string.key_url), url);
 			startActivity(intent);
 		}
-
 	}
+	
 }

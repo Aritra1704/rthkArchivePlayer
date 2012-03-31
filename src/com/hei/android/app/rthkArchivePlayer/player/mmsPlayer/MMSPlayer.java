@@ -15,19 +15,20 @@
  ** You should have received a copy of the GNU General Public License
  ** along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
-package com.hei.android.app.rthkArchivePlayer.player;
+package com.hei.android.app.rthkArchivePlayer.player.mmsPlayer;
 
 import java.net.URLConnection;
 
 import android.os.Message;
 import android.util.Log;
 
+import com.hei.android.app.rthkArchivePlayer.player.AudioPlayer;
 import com.hei.android.app.rthkArchivePlayer.player.decoder.AsfDecoder;
 import com.hei.android.app.rthkArchivePlayer.player.decoder.Decoder;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessage;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessageHandler;
-import com.hei.android.app.rthkArchivePlayer.player.pcmFeed.ArrayPCMFeed;
-import com.hei.android.app.rthkArchivePlayer.player.pcmFeed.PCMFeed;
+import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.pcmFeed.ArrayPCMFeed;
+import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.pcmFeed.PCMFeed;
 
 
 /**
@@ -35,7 +36,7 @@ import com.hei.android.app.rthkArchivePlayer.player.pcmFeed.PCMFeed;
  * It uses Decoder to decode ASF stream into PCM samples.
  * This class is not thread safe.
  */
-public class AsfPlayer {
+public class MMSPlayer implements AudioPlayer {
 
 	/**
 	 * The default expected bitrate.
@@ -58,7 +59,7 @@ public class AsfPlayer {
 	public static final int DEFAULT_DECODE_BUFFER_CAPACITY_MS = 700;
 
 
-	private static final String LOG = "AACPlayer";
+	private static final String LOG = "MMSPlayer";
 
 
 	////////////////////////////////////////////////////////////////////////////
@@ -88,7 +89,7 @@ public class AsfPlayer {
 	/**
 	 * Creates a new player.
 	 */
-	public AsfPlayer() {
+	public MMSPlayer() {
 		this( null );
 	}
 
@@ -97,7 +98,7 @@ public class AsfPlayer {
 	 * Creates a new player.
 	 * @param playerCallback the callback, can be null
 	 */
-	public AsfPlayer( final PlayerMessageHandler playerCallback ) {
+	public MMSPlayer( final PlayerMessageHandler playerCallback ) {
 		this( playerCallback, DEFAULT_AUDIO_BUFFER_CAPACITY_MS, DEFAULT_DECODE_BUFFER_CAPACITY_MS );
 	}
 
@@ -110,8 +111,8 @@ public class AsfPlayer {
 	 * @see setAudioBufferCapacityMs(int)
 	 * @see setDecodeBufferCapacityMs(int)
 	 */
-	public AsfPlayer( final PlayerMessageHandler playerCallback, final int audioBufferCapacityMs, final int decodeBufferCapacityMs ) {
-		setPlayerCallback( playerCallback );
+	public MMSPlayer( final PlayerMessageHandler playerCallback, final int audioBufferCapacityMs, final int decodeBufferCapacityMs ) {
+		setPlayerMessageHandler( playerCallback );
 		setAudioBufferCapacityMs( audioBufferCapacityMs );
 		setDecodeBufferCapacityMs( decodeBufferCapacityMs );
 		_decoder = new AsfDecoder();
@@ -174,7 +175,7 @@ public class AsfPlayer {
 	 * Sets the PlayerCallback.
 	 * NOTE: this should be set BEFORE any of the play methods are called.
 	 */
-	public void setPlayerCallback( final PlayerMessageHandler playerCallback ) {
+	public void setPlayerMessageHandler( final PlayerMessageHandler playerCallback ) {
 		this._messageHandler = playerCallback;
 	}
 
@@ -182,7 +183,7 @@ public class AsfPlayer {
 	/**
 	 * Returns the PlayerCallback or null if no PlayerCallback was set.
 	 */
-	public PlayerMessageHandler getPlayerCallback() {
+	public PlayerMessageHandler getPlayerMessageHandler() {
 		return _messageHandler;
 	}
 
@@ -192,6 +193,7 @@ public class AsfPlayer {
 	 * This method starts a new thread.
 	 * @param url the URL of the stream or file
 	 */
+	@Override
 	public void playAsync( final String url ) {
 		playAsync( url, -1 );
 	}
@@ -227,8 +229,14 @@ public class AsfPlayer {
 	 * Plays a stream synchronously.
 	 * @param url the URL of the stream or file
 	 */
-	public void play( final String url ) throws Exception {
-		play( url, -1 );
+	@Override
+	public void play( final String url ) {
+		try {
+			play( url, -1 );
+		}
+		catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 
@@ -282,14 +290,17 @@ public class AsfPlayer {
 		playImpl( is, expectedKBitSecRate );
 	}
 
+	@Override
 	public synchronized void seek( final double sec ) {
 		_seekTime = sec;
 	}
 
+	@Override
 	public synchronized void pause() {
 		_paused = true;
 	}
 
+	@Override
 	public synchronized void resume() {
 		_paused = false;
 		notify();
@@ -298,6 +309,7 @@ public class AsfPlayer {
 	/**
 	 * Stops the execution thread.
 	 */
+	@Override
 	public void stop() {
 		_stopped = true;
 	}
@@ -357,14 +369,14 @@ public class AsfPlayer {
 						pcmfeed.pause();
 
 						try {
-							wait();	
-						} catch (InterruptedException e) {
+							wait();
+						} catch (final InterruptedException e) {
 							Log.e(LOG, e.getMessage());
 						}
 
 						pcmfeed.resume();
 					}
-					
+
 					if (_seekTime >= 0) {
 						pcmfeed.pause();
 						final boolean sought = reader.seek(_seekTime);

@@ -15,7 +15,7 @@
  ** You should have received a copy of the GNU General Public License
  ** along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
-package com.hei.android.app.rthkArchivePlayer.player;
+package com.hei.android.app.rthkArchivePlayer.player.mmsPlayer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,16 +131,45 @@ public class MMSInputStream extends InputStream {
 	
 	
 	
-	public boolean seek(double time) throws IOException {
-		final boolean sought = nativeSeek(_nativeHandlerPtr, time);
+	public boolean seek(double time) {
+		final boolean sought;
+		try {
+			sought = nativeSeek(_nativeHandlerPtr, time);
+		} catch (IOException e) {
+			return false;
+		}
 		
 		if (sought) {
 			_headerReadPos = 0;
 		}
 		
-		return sought;
+		return sought; 	
+	}
+	
+	
+	
+	public long getSize() throws IOException {
+		final long size = nativeGetSize(_nativeHandlerPtr);
+		
+		return size;
+	}
+	
+	
+	
+	public long seekByte(long bytes) {
+		try {
+			final long pos = nativeSeekByte(_nativeHandlerPtr, bytes);
+			return pos;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
+	
+	public long getCurrentPos() {
+		return nativeGetCurrentPos(_nativeHandlerPtr);
+	}
+	
 	////////////////////////////////////////////////////////////////////////////
 	// Private
 	////////////////////////////////////////////////////////////////////////////
@@ -208,5 +237,11 @@ public class MMSInputStream extends InputStream {
 	private native boolean nativeSeek( int nativeHandlerPtr, double time ) throws IOException;
 	
 	private native byte[] nativeGetHeader(int nativeHandlerPtr) throws IOException;
+	
+	private native long nativeGetSize( int nativeHandlerPtr ) throws IOException;
+	
+	private native long nativeSeekByte( int nativeHandlerPtr, long bytes ) throws IOException;
+	
+	private native long nativeGetCurrentPos ( int nativeHandlerPtr );
 
 }

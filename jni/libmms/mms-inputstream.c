@@ -33,11 +33,11 @@ typedef struct MMSInfo {
 
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeConnect
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeConnect
+JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeConnect
   (JNIEnv *env, jobject thiz, jstring jurl)
 {
     ALOG_TRACE( "nativeConnect() start" );
@@ -77,11 +77,11 @@ JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInpu
 
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeRead
  * Signature: (I[BII)I
  */
-JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeRead
+JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeRead
   (JNIEnv *env, jobject thiz, jint jminfo, jbyteArray jbuf, jint off, jint len)
 {
     ALOG_TRACE( "nativeRead() start" );
@@ -114,11 +114,11 @@ JNIEXPORT jint JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInpu
 
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeClose
- * Signature: (I)I
+ * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeClose
+JNIEXPORT void JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeClose
   (JNIEnv *env, jobject thiz, jint jminfo)
 {
     ALOG_TRACE( "nativeClose() start" );
@@ -136,11 +136,11 @@ JNIEXPORT void JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInpu
 }
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeGetLength
  * Signature: (I)D
  */
-JNIEXPORT jdouble JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetLength
+JNIEXPORT jdouble JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeGetLength
   (JNIEnv *env, jobject thiz, jint jminfo)
 {
     ALOG_TRACE( "nativeGetLength() start" );
@@ -157,11 +157,11 @@ JNIEXPORT jdouble JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSI
 }
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeSeek
  * Signature: (ID)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeSeek
+JNIEXPORT jboolean JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeSeek
   (JNIEnv *env, jobject thiz, jint jminfo, jdouble time)
 {
     ALOG_TRACE( "nativeSeek() start" );
@@ -178,16 +178,18 @@ JNIEXPORT jboolean JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMS
 }
 
 /*
- * Class:     com_hei_android_app_rthkArchivePlayer_player_MMSInputStream
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
  * Method:    nativeGetHeader
  * Signature: (I)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_MMSInputStream_nativeGetHeader
+JNIEXPORT jbyteArray JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeGetHeader
   (JNIEnv * env, jobject thiz, jint jminfo)
 {
     ALOG_TRACE( "nativeGetHeader() start" );
 
     MMSInfo *minfo = (MMSInfo*) jminfo;
+
+    if (!minfo) return (*env)->NewByteArray(env, 0);
 
     uint32_t  headerLen = mmsx_get_asf_header_len (minfo->mms);
     char* header = (char*) malloc (headerLen);
@@ -199,6 +201,69 @@ JNIEXPORT jbyteArray JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_M
     ALOG_TRACE( "nativeGetHeader() end" );
 
     return jheader;
+}
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
+ * Method:    nativeGetSize
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeGetSize
+  (JNIEnv * env, jobject thiz, jint jminfo)
+{
+	  ALOG_TRACE( "nativeGetSize() start" );
+
+	  MMSInfo *minfo = (MMSInfo*) jminfo;
+
+	  if (!minfo) return -1;
+
+	  uint32_t  size = mmsx_get_length (minfo->mms);
+
+	  ALOG_TRACE( "nativeGetSize() end" );
+
+	  return size;
+}
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
+ * Method:    nativeSeekByte
+ * Signature: (IJ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeSeekByte
+  (JNIEnv * env, jobject thiz, jint jminfo, jlong bytes)
+{
+	  ALOG_TRACE( "nativeSeekByte() start" );
+
+	  MMSInfo *minfo = (MMSInfo*) jminfo;
+
+	  if (!minfo) return -1;
+
+	  mms_off_t pos = mmsx_seek (NULL, minfo->mms, bytes, 0);
+
+	  ALOG_TRACE( "nativeSeekByte() end" );
+
+	  return pos;
+}
+
+/*
+ * Class:     com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream
+ * Method:    nativeGetCurrentPos
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_com_hei_android_app_rthkArchivePlayer_player_mmsPlayer_MMSInputStream_nativeGetCurrentPos
+  (JNIEnv * env, jobject thiz, jint jminfo)
+{
+	  ALOG_TRACE( "nativeGetCurrentPos() start" );
+
+	  MMSInfo *minfo = (MMSInfo*) jminfo;
+
+	  if (!minfo) return -1;
+
+	  mms_off_t pos = mmsx_get_current_pos (minfo->mms);
+
+	  ALOG_TRACE( "nativeGetCurrentPos() end" );
+
+	  return pos;
 }
 
 

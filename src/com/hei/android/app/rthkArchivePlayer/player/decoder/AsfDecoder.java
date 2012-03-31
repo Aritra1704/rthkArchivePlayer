@@ -17,7 +17,6 @@
  **/
 package com.hei.android.app.rthkArchivePlayer.player.decoder;
 
-import com.hei.android.app.rthkArchivePlayer.player.ArrayBufferReader;
 
 
 /**
@@ -49,7 +48,7 @@ public class AsfDecoder extends Decoder {
 	/**
 	 * Starts decoding AAC stream.
 	 */
-	public Info start( final ArrayBufferReader reader ) {
+	public Info start( final BufferReader reader ) {
 		if (state != State.IDLE) {
 			throw new IllegalStateException();
 		}
@@ -124,7 +123,7 @@ public class AsfDecoder extends Decoder {
 	}
 
 
-	private native int nativeStart( ArrayBufferReader reader, Info info );
+	private native int nativeStart( BufferReader reader, Info info );
 
 	private native int nativeDecode( int aacdw, short[] samples, int outLen );
 

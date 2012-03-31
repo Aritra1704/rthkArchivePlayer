@@ -150,11 +150,11 @@ unsigned char* aacda_read_buffer( AACDArrayInfo *ainfo )
     if (javaABR.clazz == NULL)
     {
         javaABR.clazz = (*env)->GetObjectClass( env, ainfo->reader );
-        javaABR.next = (*env)->GetMethodID( env, javaABR.clazz, "next", "()Lcom/hei/android/app/rthkArchivePlayer/player/ArrayBufferReader$Buffer;");
+        javaABR.next = (*env)->GetMethodID( env, javaABR.clazz, "next", "()Lcom/hei/android/app/rthkArchivePlayer/player/decoder/BufferReader$Buffer;");
 
-        javaABR.bufferClazz = (*env)->FindClass( env, "com/hei/android/app/rthkArchivePlayer/player/ArrayBufferReader$Buffer");
-        javaABR.bufferData = (jfieldID) (*env)->GetFieldID( env, javaABR.bufferClazz, "data", "[B");
-        javaABR.bufferSize = (jfieldID) (*env)->GetFieldID( env, javaABR.bufferClazz, "size", "I");
+        javaABR.bufferClazz = (*env)->FindClass( env, "com/hei/android/app/rthkArchivePlayer/player/decoder/BufferReader$Buffer");
+        javaABR.bufferData = (jfieldID) (*env)->GetFieldID( env, javaABR.bufferClazz, "_data", "[B");
+        javaABR.bufferSize = (jfieldID) (*env)->GetFieldID( env, javaABR.bufferClazz, "_size", "I");
     }
 
     jobject jbuffer = (*env)->CallObjectMethod( env, ainfo->reader, javaABR.next );
