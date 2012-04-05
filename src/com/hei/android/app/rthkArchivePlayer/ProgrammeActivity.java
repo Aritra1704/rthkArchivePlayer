@@ -1,16 +1,11 @@
 package com.hei.android.app.rthkArchivePlayer;
 
-import greendroid.app.ActionBarActivity;
-import greendroid.app.GDListActivity;
-import greendroid.widget.ItemAdapter;
-import greendroid.widget.item.Item;
-import greendroid.widget.item.SeparatorItem;
-import greendroid.widget.item.TextItem;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -19,18 +14,24 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ListView;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import com.hei.android.app.rthkArchivePlayer.model.BasicProgrammeModel;
 import com.hei.android.app.rthkArchivePlayer.model.EpisodeModel;
+import com.hei.android.app.rthkArchivePlayer.model.ProgrammeModel;
+import com.hei.android.app.widget.actionBar.ActionBarListActivity;
 
-public class ProgrammeActivity extends GDListActivity {
+public class ProgrammeActivity extends ActionBarListActivity {
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yy-MM-dd");
 
 	/** Called when the activity is first created. */
@@ -39,9 +40,9 @@ public class ProgrammeActivity extends GDListActivity {
 		super.onCreate(savedInstanceState);
 
 		final Intent intent = getIntent();
-		final BasicProgrammeModel programme = (BasicProgrammeModel) intent.getSerializableExtra(getString(R.string.key_programme));
+		final ProgrammeModel programme = (ProgrammeModel) intent.getSerializableExtra(getString(R.string.key_programme));
 
-		final ItemAdapter adapter = new ItemAdapter(this);
+		final List<EpisodeModel> episodes = new ArrayList<EpisodeModel>();
 
 		final String pageUrl = programme.getPageUrl();
 		final Connection conn = Jsoup.connect(pageUrl);
@@ -69,15 +70,8 @@ public class ProgrammeActivity extends GDListActivity {
 				}
 
 				final EpisodeModel episode = new EpisodeModel(title, "http://programme.rthk.org.hk/channel/radio/" + href, date);
-
-				final SeparatorItem separatorItem = new SeparatorItem(dateString);
-				adapter.add(separatorItem);
-
-				final TextItem item = new TextItem(title);
-				item.setTag(episode);
-				item.enabled = true;
-
-				adapter.add(item);
+				episodes.add(episode);
+				
 			}
 		} catch (final IOException e) {
 			e.printStackTrace();
@@ -86,7 +80,7 @@ public class ProgrammeActivity extends GDListActivity {
 			.setIcon(R.drawable.alert_dialog_icon)
 			.setTitle("未能取得節目列表")
 			.setMessage("請檢查裝置是否連接到互聯網。")
-			.setPositiveButton("確定", new OnClickListener() {
+			.setPositiveButton("確定", new DialogInterface.OnClickListener() {
 
 				@Override
 				public void onClick(final DialogInterface arg0, final int arg1) {
@@ -97,44 +91,128 @@ public class ProgrammeActivity extends GDListActivity {
 			.create()
 			.show();
 		}
-
+		
+		final EpisodeItemsAdapter adapter = new EpisodeItemsAdapter(this, episodes);
 		setListAdapter(adapter);
+
 	}
+	
 
 
-	@Override
-	protected void onListItemClick(final ListView l, final View v, final int position, final long id) {
-		final Item item = (Item) l.getAdapter().getItem(position);
-		final Object tag = item.getTag();
+	private static class EpisodeItemsAdapter extends BaseAdapter {
+		private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
+		
+		private final Context _context;
+		private final List<EpisodeModel> _models;
+		private final LayoutInflater _inflater; 
 
-		if (tag instanceof EpisodeModel) {
-			final EpisodeModel episode = (EpisodeModel) tag;
-			final Intent intent = new Intent(this, AsxActivity.class);
-			final String asxUrl = episode.getAsxUrl();
+		public EpisodeItemsAdapter(Context context, List<EpisodeModel> models) {
+			_context = context;
+			_models = models;
+			_inflater = LayoutInflater.from(context);
+		}
 
-			if(asxUrl == null) {
-				new AlertDialog.Builder(this)
-				.setMessage("網上直播完畢稍後提供節目重溫。")
-				.setPositiveButton("確定", new OnClickListener() {
+		@Override
+		public int getCount() {
+			final int size = _models.size();
+			return size;
+		}
 
-					@Override
-					public void onClick(final DialogInterface arg0, final int arg1) {
+		@Override
+		public Object getItem(int position) {
+			final EpisodeModel model = _models.get(position);
+			return model;
+		}
 
-					}
+		@Override
+		public long getItemId(int position) {
+			return position;
+		}
 
-				})
-				.show();
-				return;
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			EpisodeItemViewModel viewModel = null; 
+			if (convertView == null) {
+				convertView = _inflater.inflate(R.layout.programme_item_view, null);
+				
+				final TextView textView = (TextView) convertView.findViewById(R.id.programme_item_text);
+				final ImageView starImageView = (ImageView) convertView.findViewById(R.id.programme_item_star);
+				
+				viewModel = new EpisodeItemViewModel(textView, starImageView);
+				convertView.setTag(viewModel);
+			}else {
+				viewModel = (EpisodeItemViewModel) convertView.getTag();
 			}
 
-			final Uri uri = Uri.parse(asxUrl);
-			intent.setData(uri);
+			final EpisodeModel model = _models.get(position);
+			final String name = model.getName();
+			final Date date = model.getDate();
+			final String dateString = DATE_FORMAT.format(date);
+			
+			final TextView textView = viewModel.getTextView();
+			textView.setText(dateString + ": " + name);
+			textView.setOnClickListener(new View.OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					final String asxUrl = model.getAsxUrl();
 
-			final String name = episode.getName();
-			intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, name);
+					if(asxUrl == null) {
+						new AlertDialog.Builder(_context)
+						.setMessage("網上直播完畢稍後提供節目重溫。")
+						.setPositiveButton("確定", new DialogInterface.OnClickListener() {
 
-			startActivity(intent);
+							@Override
+							public void onClick(final DialogInterface arg0, final int arg1) {
+
+							}
+
+						})
+						.show();
+						return;
+					}
+
+					final Intent intent = new Intent(_context, AsxActivity.class);
+					final Uri uri = Uri.parse(asxUrl);
+					intent.setData(uri);
+
+					_context.startActivity(intent);
+					
+				}
+			});       
+			
+			final ImageView downloadImageView = viewModel.getDownloadImageView();
+			
+			downloadImageView.setOnClickListener(new View.OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					Toast.makeText(_context, model.getName(), Toast.LENGTH_SHORT);
+				}
+			});
+
+			return convertView;
+		}
+
+		class EpisodeItemViewModel {
+			private final TextView _textView;
+			private final ImageView _downloadImageView;
+
+			EpisodeItemViewModel(final TextView textView, final ImageView starImageView) {
+				_textView = textView;
+				_downloadImageView = starImageView;
+			}
+
+			public TextView getTextView() {
+				return _textView;
+			}
+
+			public ImageView getDownloadImageView() {
+				return _downloadImageView;
+			}
 		}
 
 	}
+
+	
 }

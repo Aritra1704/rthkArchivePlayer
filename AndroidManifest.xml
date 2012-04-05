@@ -4,45 +4,39 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk android:minSdkVersion="8" />
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="14" />
+    
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:label="@string/app_name" 
-        android:name=".RthkArchivePlayerApplication" android:icon="@drawable/icon">
+        android:icon="@drawable/ic_launcher" android:theme="@style/ActionBarTheme">
         <activity
             android:label="@string/app_name"
             android:name=".AsxActivity" 
-            android:launchMode="singleTop" 
-            android:theme="@style/Theme.GreenDroid.NoTitleBar">
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:mimeType="video/x-ms-asf" />
             </intent-filter>
-            <!-- <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter> -->
         </activity>
         <activity 
-            android:label="@string/app_name"
-            android:name=".SearchActivity"
-            android:theme="@style/Theme.GreenDroid.NoTitleBar">
+            android:name="HomeActivity"
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ProgrammeActivity"
-            android:theme="@style/Theme.GreenDroid.NoTitleBar"></activity>
-        <activity android:name=".PlayerActivity"
-            android:theme="@style/Theme.GreenDroid.NoTitleBar"></activity>
-        <activity android:name=".DownloadActivity"
-            android:theme="@style/Theme.GreenDroid.NoTitleBar"></activity>
+        <activity android:name=".SearchActivity"></activity>
+        <activity android:name=".ProgrammeActivity"></activity>
+        <activity android:name=".PlayerActivity"></activity>
+        <activity android:name=".DownloadActivity"></activity>
+        
     </application>
 
 </manifest>

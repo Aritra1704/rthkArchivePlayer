@@ -1,14 +1,5 @@
 package com.hei.android.app.rthkArchivePlayer;
 
-import greendroid.app.ActionBarActivity;
-import greendroid.app.GDListActivity;
-import greendroid.widget.ActionBar;
-import greendroid.widget.ActionBar.OnActionBarListener;
-import greendroid.widget.ActionBarItem;
-import greendroid.widget.ItemAdapter;
-import greendroid.widget.item.Item;
-import greendroid.widget.item.SubtextItem;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,15 +11,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ListView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel;
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel.AsxEntryModel;
+import com.hei.android.app.widget.actionBar.ActionBarActivity;
 
-public class AsxActivity extends GDListActivity{
-	public AsxActivity() {
-		super(ActionBar.Type.Empty);
-	}
+public class AsxActivity extends ActionBarActivity{
 
 	/** Called when the activity is first created. */
 	@Override
@@ -36,7 +26,7 @@ public class AsxActivity extends GDListActivity{
 		super.onCreate(savedInstanceState);
 
 		final Intent intent = getIntent();
-		final String actionBarTitle = intent.getStringExtra(ActionBarActivity.GD_ACTION_BAR_TITLE);
+		final String actionBarTitle = intent.getStringExtra(getString(R.string.key_action_bar_title));
 		if (actionBarTitle != null) {
 			setTitle(actionBarTitle);
 		}
@@ -76,7 +66,7 @@ public class AsxActivity extends GDListActivity{
 		}
 		Log.d("RTHK", model.toString());
 
-		final ItemAdapter adapter = new ItemAdapter(this);
+		final LinearLayout layout = new LinearLayout(this);
 		final List<AsxEntryModel> entries = model.getEntries();
 		final int entrySize = entries.size();
 		final List<String> urls = new ArrayList<String>(entrySize);
@@ -84,20 +74,30 @@ public class AsxActivity extends GDListActivity{
 		for (final AsxEntryModel entry : entries) {
 			final String title = entry.getTitle();
 			final String abs = entry.getAbstract();
-
-			final SubtextItem entryItem = new SubtextItem(title, abs);
-			entryItem.setTag(entry);
-			entryItem.enabled = true;
-			adapter.add(entryItem);
 			
 			final String url = entry.getRef();
 			urls.add(url);
+
+			final TextView textView = new TextView(this);
+			textView.setText(title);
+			layout.addView(textView);
+			textView.setOnClickListener(new View.OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					final Intent intent = new Intent(AsxActivity.this, PlayerActivity.class);
+					intent.putExtra(getString(R.string.key_url), url);
+					startActivity(intent);
+					
+				}
+			});
+			
 		}
 
-		setListAdapter(adapter);
+		setContentView(layout);
 		
 
-		addActionBarItem(ActionBarItem.Type.Star);
+		/*addActionBarItem(ActionBarItem.Type.Star);
 		getActionBar().setOnActionBarListener(new OnActionBarListener() {
 			
 			@Override
@@ -106,22 +106,8 @@ public class AsxActivity extends GDListActivity{
 				intent.putExtra(getString(R.string.key_playlist), urls.toArray(new String[entrySize]));
 				startActivity(intent);
 			}
-		});
+		});*/
 	}
 
-	@Override
-	protected void onListItemClick(final ListView l, final View v, final int position, final long id) {
-		final Item item = (Item) l.getAdapter().getItem(position);
-		final Object tag = item.getTag();
-		if (tag instanceof AsxEntryModel) {
-			final AsxEntryModel model = (AsxEntryModel) tag;
-			final String url = model.getRef();
-			//			final Uri uri = Uri.parse(url);
-			//			final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-			final Intent intent = new Intent(this, PlayerActivity.class);
-			intent.putExtra(getString(R.string.key_url), url);
-			startActivity(intent);
-		}
-	}
 	
 }
