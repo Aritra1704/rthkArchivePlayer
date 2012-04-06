@@ -41,6 +41,7 @@ public class ActionBarMenuItem implements MenuItem {
     private Drawable mIconDrawable;
     private int mIconResId = 0;
     private boolean mEnabled = true;
+    private Intent mIntent;
 
     public ActionBarMenuItem(ActionBarMenu menu, int id, int order, CharSequence title) {
         mMenu = menu;
@@ -112,6 +113,15 @@ public class ActionBarMenuItem implements MenuItem {
         return mEnabled;
     }
 
+    public MenuItem setIntent(Intent intent) {
+        mIntent = intent;
+        return this;
+    }
+
+    public Intent getIntent() {
+        return mIntent;
+    }
+
     // No-op operations. We use no-ops to allow inflation from menu XML.
 
     public int getGroupId() {
@@ -153,16 +163,6 @@ public class ActionBarMenuItem implements MenuItem {
     public MenuItem setOnActionExpandListener(OnActionExpandListener onActionExpandListener) {
         // Noop
         return this;
-    }
-
-    public MenuItem setIntent(Intent intent) {
-        // Noop
-        return this;
-    }
-
-    public Intent getIntent() {
-        // Noop
-        return null;
     }
 
     public MenuItem setShortcut(char c, char c1) {

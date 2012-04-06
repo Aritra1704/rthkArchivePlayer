@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.hei.android.app.rthkArchivePlayer.widget.EpisodeItemView xmlns:android="http://schemas.android.com/apk/res/android"
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:textAppearance="?android:attr/textAppearanceLarge"
+    android:gravity="center_vertical"
+    android:paddingLeft="6dip"
+    android:paddingRight="6dip"
+    android:minHeight="?android:attr/listPreferredItemHeight">
 
 	<TextView
 		android:id="@+id/episode_item_text"
@@ -13,12 +20,14 @@
 		android:singleLine="true"
 		android:gravity="center_vertical" />
 	
-	<ImageView
+	<ImageButton
 		android:id="@+id/episode_item_download"
 		android:layout_gravity="center_vertical" 
 		android:src="@drawable/episode_item_download"
 		android:layout_width="wrap_content"
 		android:layout_height="match_parent"
+		android:scaleType="center"
+		android:background="@android:color/transparent"
 		android:contentDescription="@string/episode_item_download_description"/>
-	
-</com.hei.android.app.rthkArchivePlayer.widget.EpisodeItemView>
+
+</LinearLayout>

@@ -6,6 +6,7 @@
     android:textAppearance="?android:attr/textAppearanceLarge"
     android:gravity="center_vertical"
     android:paddingLeft="6dip"
+    android:paddingRight="6dip"
     android:minHeight="?android:attr/listPreferredItemHeight">
 
 	<TextView
@@ -18,11 +19,13 @@
 		android:singleLine="true"
 		android:gravity="center_vertical"/>
 	
-	<ImageView
+	<ImageButton
 		android:id="@+id/programme_item_star"
 		android:layout_gravity="center_vertical"
 		android:layout_width="wrap_content"
 		android:layout_height="match_parent"
+		android:scaleType="center"
+		android:background="@android:color/transparent"
 		android:contentDescription="@string/programme_item_star_description" />
 
 </LinearLayout>

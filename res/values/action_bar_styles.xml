@@ -25,6 +25,7 @@
         <item name="actionbarCompatItemStyle">@style/ActionBarCompatItem</item>
         <item name="actionbarCompatItemHomeStyle">@style/ActionBarCompatHomeItem</item>
         <item name="actionbarCompatProgressIndicatorStyle">@style/ActionBarCompatProgressIndicator</item>
+        <item name="actionbarCompatSearchEditTextStyle">@style/ActionBarCompatSearchEditText</item>
     </style>
     
     <style name="ActionBarCompat">
@@ -60,6 +61,9 @@
     </style>
 
     <style name="ActionBarCompatHomeItem" parent="style/ActionBarCompatItemBase">
+    </style>
+    
+    <style name="ActionBarCompatSearchEditText" parent="@android:style/Widget.EditText">
     </style>
 
 </resources>

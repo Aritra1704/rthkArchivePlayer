@@ -23,7 +23,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -78,9 +78,9 @@ public class ProgrammeActivity extends ActionBarListActivity {
 
 			new AlertDialog.Builder(ProgrammeActivity.this)
 			.setIcon(R.drawable.alert_dialog_icon)
-			.setTitle("未能取得節目列表")
-			.setMessage("請檢查裝置是否連接到互聯網。")
-			.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+			.setTitle(R.string.alert_internet_fail_title)
+			.setMessage(R.string.alert_internet_fail_message)
+			.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
 
 				@Override
 				public void onClick(final DialogInterface arg0, final int arg1) {
@@ -133,12 +133,12 @@ public class ProgrammeActivity extends ActionBarListActivity {
 		public View getView(int position, View convertView, ViewGroup parent) {
 			EpisodeItemViewModel viewModel = null; 
 			if (convertView == null) {
-				convertView = _inflater.inflate(R.layout.programme_item_view, null);
+				convertView = _inflater.inflate(R.layout.episode_item_view, null);
 				
-				final TextView textView = (TextView) convertView.findViewById(R.id.programme_item_text);
-				final ImageView starImageView = (ImageView) convertView.findViewById(R.id.programme_item_star);
+				final TextView textView = (TextView) convertView.findViewById(R.id.episode_item_text);
+				final ImageButton downloadButton = (ImageButton) convertView.findViewById(R.id.episode_item_download);
 				
-				viewModel = new EpisodeItemViewModel(textView, starImageView);
+				viewModel = new EpisodeItemViewModel(textView, downloadButton);
 				convertView.setTag(viewModel);
 			}else {
 				viewModel = (EpisodeItemViewModel) convertView.getTag();
@@ -181,9 +181,9 @@ public class ProgrammeActivity extends ActionBarListActivity {
 				}
 			});       
 			
-			final ImageView downloadImageView = viewModel.getDownloadImageView();
+			final ImageButton downloadButton = viewModel.getDownloadButton();
 			
-			downloadImageView.setOnClickListener(new View.OnClickListener() {
+			downloadButton.setOnClickListener(new View.OnClickListener() {
 				
 				@Override
 				public void onClick(View v) {
@@ -196,19 +196,19 @@ public class ProgrammeActivity extends ActionBarListActivity {
 
 		class EpisodeItemViewModel {
 			private final TextView _textView;
-			private final ImageView _downloadImageView;
+			private final ImageButton _downloadButton;
 
-			EpisodeItemViewModel(final TextView textView, final ImageView starImageView) {
+			EpisodeItemViewModel(final TextView textView, final ImageButton downloadButton) {
 				_textView = textView;
-				_downloadImageView = starImageView;
+				_downloadButton = downloadButton;
 			}
 
 			public TextView getTextView() {
 				return _textView;
 			}
 
-			public ImageView getDownloadImageView() {
-				return _downloadImageView;
+			public ImageButton getDownloadButton() {
+				return _downloadButton;
 			}
 		}
 
