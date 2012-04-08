@@ -44,6 +44,10 @@ public class ProgrammeActivity extends ActionBarListActivity {
 
 		final Intent intent = getIntent();
 		final ProgrammeModel programme = (ProgrammeModel) intent.getSerializableExtra(getString(R.string.key_programme));
+		
+		final String name = programme.getName();
+		setTitle(name);
+		
 		final LoadEpisodeTask loadEpisodeTask = new LoadEpisodeTask();
 		loadEpisodeTask.execute(new ProgrammeModel[]{programme});
 	}
