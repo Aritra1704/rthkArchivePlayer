@@ -21,6 +21,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -44,6 +46,15 @@ public class ProgrammeActivity extends ActionBarListActivity {
 		final ProgrammeModel programme = (ProgrammeModel) intent.getSerializableExtra(getString(R.string.key_programme));
 		final LoadEpisodeTask loadEpisodeTask = new LoadEpisodeTask();
 		loadEpisodeTask.execute(new ProgrammeModel[]{programme});
+	}
+	
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater menuInflater = getMenuInflater();
+		menuInflater.inflate(R.menu.programme_menu, menu);
+		
+		return super.onCreateOptionsMenu(menu);
 	}
 	
 

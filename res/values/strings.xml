@@ -10,6 +10,7 @@
     <string name="home_history">最近收聽</string>
     
     <string name="menu_search">搜尋</string>
+    <string name="menu_star">加到我的最愛</string>
     
     <string name="programme_item_star_description">加到我的最愛</string>
     <string name="episode_item_download_description">下載</string>
