@@ -1,33 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textAppearance="?android:attr/textAppearanceLarge"
     android:gravity="center_vertical"
+    android:minHeight="?android:attr/listPreferredItemHeight"
     android:paddingLeft="6dip"
     android:paddingRight="6dip"
-    android:minHeight="?android:attr/listPreferredItemHeight">
+    android:textAppearance="?android:attr/textAppearanceLarge" >
 
-	<TextView
-		android:id="@+id/episode_item_text"
-		
-		android:layout_width="0dp"
-		android:layout_height="fill_parent"
-		android:layout_weight="1"
-		
-		android:singleLine="true"
-		android:gravity="center_vertical" />
-	
-	<ImageButton
-		android:id="@+id/episode_item_download"
-		android:layout_gravity="center_vertical" 
-		android:src="@drawable/episode_item_download"
-		android:layout_width="wrap_content"
-		android:layout_height="match_parent"
-		android:scaleType="center"
-		android:background="@android:color/transparent"
-		android:contentDescription="@string/episode_item_download_description"/>
+    <LinearLayout
+        android:id="@+id/episode_item_text"
+        android:layout_width="0dp"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/episode_item_date"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:singleLine="true" 
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/episode_item_title"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:gravity="center_vertical"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/episode_item_download"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/episode_item_download_description"
+        android:scaleType="center"
+        android:src="@drawable/episode_item_download" />
 
 </LinearLayout>

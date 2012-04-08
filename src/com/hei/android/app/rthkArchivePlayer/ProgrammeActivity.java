@@ -98,11 +98,13 @@ public class ProgrammeActivity extends ActionBarListActivity {
 			EpisodeItemViewModel viewModel = null; 
 			if (convertView == null) {
 				convertView = _inflater.inflate(R.layout.episode_item_view, null);
-				
-				final TextView textView = (TextView) convertView.findViewById(R.id.episode_item_text);
+
+				final View textView = convertView.findViewById(R.id.episode_item_text);
+				final TextView dateView = (TextView) convertView.findViewById(R.id.episode_item_date);
+				final TextView titleView = (TextView) convertView.findViewById(R.id.episode_item_title);
 				final ImageButton downloadButton = (ImageButton) convertView.findViewById(R.id.episode_item_download);
 				
-				viewModel = new EpisodeItemViewModel(textView, downloadButton);
+				viewModel = new EpisodeItemViewModel(textView, dateView, titleView, downloadButton);
 				convertView.setTag(viewModel);
 			}else {
 				viewModel = (EpisodeItemViewModel) convertView.getTag();
@@ -113,8 +115,13 @@ public class ProgrammeActivity extends ActionBarListActivity {
 			final Date date = model.getDate();
 			final String dateString = DATE_FORMAT.format(date);
 			
-			final TextView textView = viewModel.getTextView();
-			textView.setText(dateString + ": " + name);
+			final TextView dateView = viewModel.getDateView();
+			dateView.setText(dateString);
+
+			final TextView titleView = viewModel.getTitleView();
+			titleView.setText(name);
+			
+			final View textView = viewModel.getTextView();
 			textView.setOnClickListener(new View.OnClickListener() {
 				
 				@Override
@@ -161,16 +168,29 @@ public class ProgrammeActivity extends ActionBarListActivity {
 		}
 
 		class EpisodeItemViewModel {
-			private final TextView _textView;
+			private final View _textView;
+			private final TextView _dateView;
+			private final TextView _titleView;
 			private final ImageButton _downloadButton;
 
-			EpisodeItemViewModel(final TextView textView, final ImageButton downloadButton) {
+			EpisodeItemViewModel(final View textView, final TextView dateView, final TextView titleView, 
+					final ImageButton downloadButton) {
 				_textView = textView;
+				_dateView = dateView;
+				_titleView = titleView;
 				_downloadButton = downloadButton;
 			}
 
-			public TextView getTextView() {
+			public View getTextView() {
 				return _textView;
+			}
+			
+			public TextView getDateView() {
+				return _dateView;
+			}
+			
+			public TextView getTitleView() {
+				return _titleView;
 			}
 
 			public ImageButton getDownloadButton() {

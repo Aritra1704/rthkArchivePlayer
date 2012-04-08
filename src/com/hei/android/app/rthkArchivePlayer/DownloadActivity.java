@@ -64,10 +64,12 @@ public class DownloadActivity extends ActionBarActivity {
 		final Intent intent = getIntent();
 		final EpisodeModel episode = (EpisodeModel) intent.getSerializableExtra(getString(R.string.key_episode));
 
+		final String programmeName = episode.getProgrammeName();
 		final String name = episode.getName();
 		final Date date = episode.getDate();
 		final String dateStr = DATE_FORMAT.format(date);
-		_infoText.setText(name + " " + dateStr);
+		setTitle(getString(R.string.title_download) + " - " + programmeName);
+		_infoText.setText(programmeName + " " + dateStr + "\n" + name);
 
 		final String asxUrl = episode.getAsxUrl();
 		new Downloader(this, asxUrl, 10, _wifiLock, _handler).start();
@@ -142,6 +144,20 @@ public class DownloadActivity extends ActionBarActivity {
 
 			return msg;
 		}
+		
+		public static Message createDownloadSuccessMessage() {
+			final Message msg = new Message();
+			msg.what = Type.DOWNLOAD_SUCCESS.ordinal();
+
+			return msg;
+		}
+
+		public static Message createDownloadFailedMessage() {
+			final Message msg = new Message();
+			msg.what = Type.DOWNLOAD_SUCCESS.ordinal();
+
+			return msg;
+		}
 
 		private final DownloadActivity _activity;
 		private long _progress;
@@ -204,6 +220,16 @@ public class DownloadActivity extends ActionBarActivity {
 			final Message msg = createProgressUpdateMessage(progress);
 			sendMessage(msg);
 		}
+		
+		public void sendDownloadSuccessMessage() {
+			final Message msg = createDownloadSuccessMessage();
+			sendMessage(msg);
+		}
+		
+		public void sendDownloadFailedMessage() {
+			final Message msg = createDownloadFailedMessage();
+			sendMessage(msg);
+		}
 	}
 
 	protected static class Downloader extends Thread {
@@ -244,6 +270,8 @@ public class DownloadActivity extends ActionBarActivity {
 					mmsStream.close();
 				} catch (Exception e) {
 					Log.e(TAG, e.getMessage());
+					_handler.sendDownloadFailedMessage();
+					_wifiLock.release();
 					return;
 				}
 			}
@@ -261,6 +289,8 @@ public class DownloadActivity extends ActionBarActivity {
 					try {
 						final String externalStorageState = Environment.getExternalStorageState();
 						if(externalStorageState.equals(Environment.MEDIA_REMOVED) ) {
+							_handler.sendDownloadFailedMessage();
+							_wifiLock.release();
 							return;
 						}
 						final File sdCardRoot = Environment.getExternalStorageDirectory();
@@ -280,6 +310,8 @@ public class DownloadActivity extends ActionBarActivity {
 
 					} catch (Exception e) {
 						Log.e(TAG, e.getMessage());
+						_handler.sendDownloadFailedMessage();
+						_wifiLock.release();
 						return;
 					}
 
@@ -324,38 +356,43 @@ public class DownloadActivity extends ActionBarActivity {
 								e.printStackTrace();
 							}
 						}
-
-						final List<String> pathName = AsfFileOutputStream.getPathName(filePath, _threadNum);
-						FileOutputStream baseFile = null;
-						for (String path : pathName) {
-							if(baseFile == null) {
-								baseFile = new FileOutputStream(filePath, true); 
-							}
-							else {
-								try {
-									final File file = new File(path);
-									final FileInputStream inputStream = new FileInputStream(file);
-									byte[] buffer = new byte[1024];
-									int read = 0;
-									while ((read = inputStream.read(buffer)) > 0) {
-										baseFile.write(buffer, 0, read);
-									}
-									inputStream.close();
-									file.delete();
-								} catch (IOException e) {
-									Log.e(TAG, e.getMessage());
-								} 
-							}
-						}
-						baseFile.close();
-
 					}
+
+					final List<String> pathName = AsfFileOutputStream.getPathName(filePath, _threadNum);
+					FileOutputStream baseFile = null;
+					for (String path : pathName) {
+						if(baseFile == null) {
+							baseFile = new FileOutputStream(filePath, true); 
+						}
+						else {
+							try {
+								final File file = new File(path);
+								final FileInputStream inputStream = new FileInputStream(file);
+								byte[] buffer = new byte[1024];
+								int read = 0;
+								while ((read = inputStream.read(buffer)) > 0) {
+									baseFile.write(buffer, 0, read);
+								}
+								inputStream.close();
+								file.delete();
+							} catch (IOException e) {
+								Log.e(TAG, e.getMessage());
+							} 
+						}
+					}
+					baseFile.close();
+
+					
 				} catch (IOException e) {
 					Log.e(TAG, e.getMessage());
+					_handler.sendDownloadFailedMessage();
+					_wifiLock.release();
+					return;
 				}
 
 			}
 			_wifiLock.release();
+			_handler.sendDownloadSuccessMessage();
 		}
 
 		private class DownloadThread extends Thread {
@@ -400,6 +437,11 @@ public class DownloadActivity extends ActionBarActivity {
 				} finally {
 					try {
 						_stream.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					try {
+						_file.close();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
