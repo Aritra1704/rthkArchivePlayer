@@ -13,15 +13,21 @@ import org.jsoup.select.Elements;
 public class EpisodeModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	private final String _programmeName;
 	private final String _name;
 	private final String _pageUrl;
 	private final Date _date;
 	private String _asxUrl = null;
 
-	public EpisodeModel(final String name, final String pageUrl, final Date date) {
+	public EpisodeModel(final String programmeName, final String name, final String pageUrl, final Date date) {
+		_programmeName = programmeName;
 		_name = name;
 		_pageUrl = pageUrl;
 		_date = date;
+	}
+	
+	public String getProgrammeName() {
+		return _programmeName;
 	}
 
 	public String getName() {

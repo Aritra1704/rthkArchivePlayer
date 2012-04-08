@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,7 +26,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.hei.android.app.rthkArchivePlayer.model.EpisodeModel;
 import com.hei.android.app.rthkArchivePlayer.model.ProgrammeModel;
@@ -33,6 +33,7 @@ import com.hei.android.app.widget.actionBar.ActionBarListActivity;
 
 public class ProgrammeActivity extends ActionBarListActivity {
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yy-MM-dd");
+	private static final String EPISODE_URL_BASE = "http://programme.rthk.org.hk/channel/radio/";
 
 	/** Called when the activity is first created. */
 	@Override
@@ -41,60 +42,8 @@ public class ProgrammeActivity extends ActionBarListActivity {
 
 		final Intent intent = getIntent();
 		final ProgrammeModel programme = (ProgrammeModel) intent.getSerializableExtra(getString(R.string.key_programme));
-
-		final List<EpisodeModel> episodes = new ArrayList<EpisodeModel>();
-
-		final String pageUrl = programme.getPageUrl();
-		final Connection conn = Jsoup.connect(pageUrl);
-		try {
-			final Document document = conn.get();
-			final Elements items = document.select("div.title a");
-			for (final Element element : items) {
-				final String href = element.attr("href");
-				final String text = element.text();
-
-				final int indexOfSpace = text.indexOf(' ');
-				if(indexOfSpace == -1) {
-					continue;
-				}
-
-				final String dateString = text.substring(0, indexOfSpace);
-				final String title = text.substring(indexOfSpace + 1);
-
-				final Date date;
-				try {
-					date = DATE_FORMAT.parse(dateString);
-				}catch (final ParseException e) {
-					e.printStackTrace();
-					continue;
-				}
-
-				final EpisodeModel episode = new EpisodeModel(title, "http://programme.rthk.org.hk/channel/radio/" + href, date);
-				episodes.add(episode);
-				
-			}
-		} catch (final IOException e) {
-			e.printStackTrace();
-
-			new AlertDialog.Builder(ProgrammeActivity.this)
-			.setIcon(R.drawable.alert_dialog_icon)
-			.setTitle(R.string.alert_internet_fail_title)
-			.setMessage(R.string.alert_internet_fail_message)
-			.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-
-				@Override
-				public void onClick(final DialogInterface arg0, final int arg1) {
-
-				}
-
-			})
-			.create()
-			.show();
-		}
-		
-		final EpisodeItemsAdapter adapter = new EpisodeItemsAdapter(this, episodes);
-		setListAdapter(adapter);
-
+		final LoadEpisodeTask loadEpisodeTask = new LoadEpisodeTask();
+		loadEpisodeTask.execute(new ProgrammeModel[]{programme});
 	}
 	
 
@@ -159,8 +108,8 @@ public class ProgrammeActivity extends ActionBarListActivity {
 
 					if(asxUrl == null) {
 						new AlertDialog.Builder(_context)
-						.setMessage("網上直播完畢稍後提供節目重溫。")
-						.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+						.setMessage(R.string.alert_no_asx_url)
+						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
 
 							@Override
 							public void onClick(final DialogInterface arg0, final int arg1) {
@@ -187,7 +136,9 @@ public class ProgrammeActivity extends ActionBarListActivity {
 				
 				@Override
 				public void onClick(View v) {
-					Toast.makeText(_context, model.getName(), Toast.LENGTH_SHORT);
+					final Intent intent = new Intent(_context, DownloadActivity.class);
+					intent.putExtra(_context.getString(R.string.key_episode), model);
+					_context.startActivity(intent);
 				}
 			});
 
@@ -212,6 +163,84 @@ public class ProgrammeActivity extends ActionBarListActivity {
 			}
 		}
 
+	}
+	
+	private class LoadEpisodeTask extends AsyncTask<ProgrammeModel, Void, List<EpisodeModel>> {
+
+		@Override
+		protected List<EpisodeModel> doInBackground(ProgrammeModel... models) {
+			if(models.length < 1) {
+				return null;
+			}
+
+			final List<EpisodeModel> episodes = new ArrayList<EpisodeModel>();
+			
+			final ProgrammeModel programme = models[0];
+			final String pageUrl = programme.getPageUrl();
+			final String name = programme.getName();
+			
+			final Connection conn = Jsoup.connect(pageUrl);
+			try {
+				final Document document = conn.get();
+				final Elements items = document.select("div.title a");
+				for (final Element element : items) {
+					final String href = element.attr("href");
+					final String text = element.text();
+
+					final int indexOfSpace = text.indexOf(' ');
+					if(indexOfSpace == -1) {
+						continue;
+					}
+
+					final String dateString = text.substring(0, indexOfSpace);
+					final String title = text.substring(indexOfSpace + 1);
+
+					final Date date;
+					try {
+						date = DATE_FORMAT.parse(dateString);
+					}catch (final ParseException e) {
+						e.printStackTrace();
+						continue;
+					}
+
+					final EpisodeModel episode = new EpisodeModel(name, title, EPISODE_URL_BASE + href, date);
+					episodes.add(episode);
+					
+				}
+			} catch (final IOException e) {
+				e.printStackTrace();
+
+				
+				return null;
+			}
+			
+			return episodes;
+		}
+		
+		@Override
+		protected void onPostExecute(List<EpisodeModel> episodes) {
+			if(episodes == null) {
+				new AlertDialog.Builder(ProgrammeActivity.this)
+				.setIcon(R.drawable.alert_dialog_icon)
+				.setTitle(R.string.alert_internet_fail_title)
+				.setMessage(R.string.alert_internet_fail_message)
+				.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+
+					@Override
+					public void onClick(final DialogInterface arg0, final int arg1) {
+
+					}
+
+				})
+				.create()
+				.show();
+			}
+			else {
+				final EpisodeItemsAdapter adapter = new EpisodeItemsAdapter(ProgrammeActivity.this, episodes);
+				setListAdapter(adapter);
+			}
+		}
+		
 	}
 
 	
