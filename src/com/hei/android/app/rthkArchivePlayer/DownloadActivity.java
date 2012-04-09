@@ -197,6 +197,8 @@ public class DownloadActivity extends ActionBarActivity {
 			case DOWNLOAD_SUCCESS:
 				_activity._downloadingTextTimer.cancel();
 				_activity._downloadingText.setText(_activity.getString(R.string.download_success));
+				_activity._progressBar.setProgress(100);
+				_activity._progressText.setText(100 + "%");
 				break;
 
 			case DOWNLOAD_FAILED:
