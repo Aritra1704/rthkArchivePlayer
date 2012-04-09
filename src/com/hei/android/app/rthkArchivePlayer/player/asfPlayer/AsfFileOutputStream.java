@@ -37,15 +37,15 @@ public class AsfFileOutputStream extends FileOutputStream {
 
 		return streams;
 	}
-	
+
 	public static List<String> getPathName(final String path, final int threadNum) {
 		final List<String> filesList = new ArrayList<String>(threadNum);
 		String ext = "";
 		for(int i = 0; i < threadNum; i++, ext = ".part" + i) {
 			filesList.add(path + ext);
 		}
-		
-		
+
+
 		return filesList;
 	}
 

@@ -43,7 +43,7 @@ public class DownloadActivity extends ActionBarActivity {
 	private WifiLock _wifiLock;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.downloader);
 
@@ -144,7 +144,7 @@ public class DownloadActivity extends ActionBarActivity {
 
 			return msg;
 		}
-		
+
 		public static Message createDownloadSuccessMessage() {
 			final Message msg = new Message();
 			msg.what = Type.DOWNLOAD_SUCCESS.ordinal();
@@ -163,7 +163,7 @@ public class DownloadActivity extends ActionBarActivity {
 		private long _progress;
 		private long _size;
 
-		public DownloadMessageHandler(DownloadActivity activity) {
+		public DownloadMessageHandler(final DownloadActivity activity) {
 			super();
 			_activity = activity;
 			_size = -1L;
@@ -193,7 +193,7 @@ public class DownloadActivity extends ActionBarActivity {
 				_activity._progressBar.setProgress(currentProgress);
 				_activity._progressText.setText(currentProgress + "%");
 				break;
-				
+
 			case DOWNLOAD_SUCCESS:
 				_activity._downloadingTextTimer.cancel();
 				_activity._downloadingText.setText(_activity.getString(R.string.download_success));
@@ -220,12 +220,12 @@ public class DownloadActivity extends ActionBarActivity {
 			final Message msg = createProgressUpdateMessage(progress);
 			sendMessage(msg);
 		}
-		
+
 		public void sendDownloadSuccessMessage() {
 			final Message msg = createDownloadSuccessMessage();
 			sendMessage(msg);
 		}
-		
+
 		public void sendDownloadFailedMessage() {
 			final Message msg = createDownloadFailedMessage();
 			sendMessage(msg);
@@ -240,7 +240,7 @@ public class DownloadActivity extends ActionBarActivity {
 		private final DownloadMessageHandler _handler;
 		private int _threadFinishedCount;
 
-		public Downloader (Context context, String asxUrl, int threadNum, WifiLock wifiLock, DownloadMessageHandler handler) {
+		public Downloader (final Context context, final String asxUrl, final int threadNum, final WifiLock wifiLock, final DownloadMessageHandler handler) {
 			super("DownloadActivity.Downloader");
 			_context = context;
 			_asxUrl = asxUrl;
@@ -256,19 +256,19 @@ public class DownloadActivity extends ActionBarActivity {
 			final List<AsxEntryModel> entries = asx.getEntries();
 			final String[] playlist = new String[entries.size()];
 			for (int i = 0; i<playlist.length; i++) {
-				AsxEntryModel entry = entries.get(i);
+				final AsxEntryModel entry = entries.get(i);
 				final String ref = entry.getRef();
 				playlist[i] = ref;
 			}
 
 
-			long totalSize = 0L;
+			long totalSize = 10L;
 			for (final String url : playlist) {
 				try {
 					final MMSInputStream mmsStream = new MMSInputStream(url);
 					totalSize += mmsStream.getSize();
 					mmsStream.close();
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					Log.e(TAG, e.getMessage());
 					_handler.sendDownloadFailedMessage();
 					_wifiLock.release();
@@ -277,9 +277,8 @@ public class DownloadActivity extends ActionBarActivity {
 			}
 			_handler.sendTotalSizeUpdateMessage(totalSize);
 
-			for (int i = 0; i<playlist.length; i++) {
+			for (final String url : playlist) {
 				_threadFinishedCount = 0;
-				final String url = playlist[i];
 				try {
 					final MMSInputStream mmsStream = new MMSInputStream(url);
 					final long size = mmsStream.getSize();
@@ -305,10 +304,10 @@ public class DownloadActivity extends ActionBarActivity {
 						final String filename = URLEncoder.encode(url);
 						final double length = mmsStream.getLength();
 						filePath = rthkPath + "/" + filename;
-						files = AsfFileOutputStream.createAsfFileOutputStreams(_context, 
+						files = AsfFileOutputStream.createAsfFileOutputStreams(_context,
 								url, filePath,length, size, _threadNum);
 
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						Log.e(TAG, e.getMessage());
 						_handler.sendDownloadFailedMessage();
 						_wifiLock.release();
@@ -317,7 +316,7 @@ public class DownloadActivity extends ActionBarActivity {
 
 					int streamNum = 0;
 					final long stepSize = size / _threadNum;
-					
+
 					long startPos = -1L;
 					long readCap = -1L;
 					DownloadThread downloadThread = null;
@@ -338,9 +337,9 @@ public class DownloadActivity extends ActionBarActivity {
 						}
 
 						downloadThread = new DownloadThread(stream, file, streamNum);
-						
+
 						streamNum++;
-						
+
 						if(streamNum == _threadNum) {
 							downloadThread.setReadCapacity(size * 2);
 							downloadThread.start();
@@ -352,7 +351,7 @@ public class DownloadActivity extends ActionBarActivity {
 						while (_threadFinishedCount < _threadNum) {
 							try {
 								wait();
-							} catch (InterruptedException e) {
+							} catch (final InterruptedException e) {
 								e.printStackTrace();
 							}
 						}
@@ -360,30 +359,30 @@ public class DownloadActivity extends ActionBarActivity {
 
 					final List<String> pathName = AsfFileOutputStream.getPathName(filePath, _threadNum);
 					FileOutputStream baseFile = null;
-					for (String path : pathName) {
+					for (final String path : pathName) {
 						if(baseFile == null) {
-							baseFile = new FileOutputStream(filePath, true); 
+							baseFile = new FileOutputStream(filePath, true);
 						}
 						else {
 							try {
 								final File file = new File(path);
 								final FileInputStream inputStream = new FileInputStream(file);
-								byte[] buffer = new byte[1024];
+								final byte[] buffer = new byte[1024];
 								int read = 0;
 								while ((read = inputStream.read(buffer)) > 0) {
 									baseFile.write(buffer, 0, read);
 								}
 								inputStream.close();
 								file.delete();
-							} catch (IOException e) {
+							} catch (final IOException e) {
 								Log.e(TAG, e.getMessage());
-							} 
+							}
 						}
 					}
 					baseFile.close();
 
-					
-				} catch (IOException e) {
+
+				} catch (final IOException e) {
 					Log.e(TAG, e.getMessage());
 					_handler.sendDownloadFailedMessage();
 					_wifiLock.release();
@@ -400,17 +399,18 @@ public class DownloadActivity extends ActionBarActivity {
 			private final AsfFileOutputStream _file;
 			private long _readCap;
 
-			private DownloadThread(MMSInputStream stream, AsfFileOutputStream file, int streamNum) {
+			private DownloadThread(final MMSInputStream stream, final AsfFileOutputStream file, final int streamNum) {
 				super("DownloadThread" + streamNum);
 				_stream = stream;
 				_file = file;
 				_readCap = -1L;
 			}
 
-			public void setReadCapacity(long capacity) {
+			public void setReadCapacity(final long capacity) {
 				_readCap = capacity;
 			}
 
+			@Override
 			public void run() {
 				final int bufferSize = 1024;
 				final byte[] buf = new byte[bufferSize];
@@ -432,17 +432,17 @@ public class DownloadActivity extends ActionBarActivity {
 							readSize = remain;
 						}
 					}
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					e.printStackTrace();
 				} finally {
 					try {
 						_stream.close();
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						e.printStackTrace();
 					}
 					try {
 						_file.close();
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						e.printStackTrace();
 					}
 				}

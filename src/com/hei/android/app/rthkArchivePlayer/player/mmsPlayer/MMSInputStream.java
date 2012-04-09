@@ -219,12 +219,6 @@ public class MMSInputStream extends InputStream {
 			throw new RuntimeException( e );
 		}
 	}
-	
-	@Override
-	protected void finalize() throws Throwable {
-		nativeClose(_nativeHandlerPtr);
-	};
-
 
 	private native int nativeConnect( String url ) throws IOException;
 	

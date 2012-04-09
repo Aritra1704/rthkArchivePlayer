@@ -181,9 +181,4 @@ public class AsfFileDbAdapter {
 
 		return rowNum > 0;
 	}
-
-	@Override
-	protected void finalize() {
-		close();
-	}
 }

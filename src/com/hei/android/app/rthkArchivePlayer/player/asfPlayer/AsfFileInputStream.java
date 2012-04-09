@@ -50,9 +50,4 @@ public class AsfFileInputStream extends FileInputStream {
 	public long getSize() throws IOException {
 		return _size;
 	}
-
-	@Override
-	protected void finalize() throws IOException {
-		close();
-	}
 }
