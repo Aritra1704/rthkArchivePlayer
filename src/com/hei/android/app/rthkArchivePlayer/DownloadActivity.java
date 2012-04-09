@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Timer;
@@ -26,7 +27,7 @@ import android.widget.TextView;
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel;
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel.AsxEntryModel;
 import com.hei.android.app.rthkArchivePlayer.model.EpisodeModel;
-import com.hei.android.app.rthkArchivePlayer.player.asfPlayer.AsfFileOutputStream;
+import com.hei.android.app.rthkArchivePlayer.player.asfPlayer.AsfFileDbAdapter;
 import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.MMSInputStream;
 import com.hei.android.app.widget.actionBar.ActionBarActivity;
 
@@ -284,8 +285,9 @@ public class DownloadActivity extends ActionBarActivity {
 				try {
 					final MMSInputStream mmsStream = new MMSInputStream(url);
 					final long size = mmsStream.getSize();
+					final double length = mmsStream.getLength();
 
-					final List<AsfFileOutputStream> files;
+					final List<FileOutputStream> files;
 					final String filePath;
 					try {
 						final String externalStorageState = Environment.getExternalStorageState();
@@ -304,10 +306,14 @@ public class DownloadActivity extends ActionBarActivity {
 
 						final String rthkPath = rthkFolder.getPath();
 						final String filename = URLEncoder.encode(url);
-						final double length = mmsStream.getLength();
 						filePath = rthkPath + "/" + filename;
-						files = AsfFileOutputStream.createAsfFileOutputStreams(_context,
-								url, filePath,length, size, _threadNum);
+
+						files = new ArrayList<FileOutputStream>(_threadNum);
+						String ext = "";
+						for(int i = 0; i < _threadNum; i++, ext = ".part" + i) {
+							final FileOutputStream stream = new FileOutputStream(filePath + ext);
+							files.add(stream);
+						}
 
 					} catch (final Exception e) {
 						Log.e(TAG, e.getMessage());
@@ -323,7 +329,7 @@ public class DownloadActivity extends ActionBarActivity {
 					long readCap = -1L;
 					DownloadThread downloadThread = null;
 
-					for (final AsfFileOutputStream file : files) {
+					for (final FileOutputStream file : files) {
 						final MMSInputStream stream;
 						if(streamNum == 0) {
 							stream = mmsStream;
@@ -359,31 +365,30 @@ public class DownloadActivity extends ActionBarActivity {
 						}
 					}
 
-					final List<String> pathName = AsfFileOutputStream.getPathName(filePath, _threadNum);
-					FileOutputStream baseFile = null;
-					for (final String path : pathName) {
-						if(baseFile == null) {
-							baseFile = new FileOutputStream(filePath, true);
-						}
-						else {
-							try {
-								final File file = new File(path);
-								final FileInputStream inputStream = new FileInputStream(file);
-								final byte[] buffer = new byte[1024];
-								int read = 0;
-								while ((read = inputStream.read(buffer)) > 0) {
-									baseFile.write(buffer, 0, read);
-								}
-								inputStream.close();
-								file.delete();
-							} catch (final IOException e) {
-								Log.e(TAG, e.getMessage());
+					final FileOutputStream baseFile = new FileOutputStream(filePath, true);;
+					for(int i = 1; i < _threadNum; i++) {
+						final String path = filePath + ".part" + i;
+						try {
+							final File file = new File(path);
+							final FileInputStream inputStream = new FileInputStream(file);
+							final byte[] buffer = new byte[1024];
+							int read = 0;
+							while ((read = inputStream.read(buffer)) > 0) {
+								baseFile.write(buffer, 0, read);
 							}
+							inputStream.close();
+							file.delete();
+						} catch (final IOException e) {
+							Log.e(TAG, e.getMessage());
 						}
 					}
 					baseFile.close();
 
 
+					final AsfFileDbAdapter dbAdapter = new AsfFileDbAdapter(_context);
+					dbAdapter.open();
+					dbAdapter.createFile(url, filePath, length, size);
+					dbAdapter.close();
 				} catch (final IOException e) {
 					Log.e(TAG, e.getMessage());
 					_handler.sendDownloadFailedMessage();
@@ -398,10 +403,10 @@ public class DownloadActivity extends ActionBarActivity {
 
 		private class DownloadThread extends Thread {
 			private final MMSInputStream _stream;
-			private final AsfFileOutputStream _file;
+			private final FileOutputStream _file;
 			private long _readCap;
 
-			private DownloadThread(final MMSInputStream stream, final AsfFileOutputStream file, final int streamNum) {
+			private DownloadThread(final MMSInputStream stream, final FileOutputStream file, final int streamNum) {
 				super("DownloadThread" + streamNum);
 				_stream = stream;
 				_file = file;
