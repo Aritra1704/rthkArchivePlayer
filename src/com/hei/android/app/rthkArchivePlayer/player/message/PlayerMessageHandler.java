@@ -60,6 +60,11 @@ public abstract class PlayerMessageHandler extends Handler {
 	 * This method is called when the current position is updated
 	 */
 	protected abstract void playerCurrentPosUpdate( double pos );
+	
+	/**
+	 * This method is called after the player sought
+	 */
+	protected abstract void playerSought();
 
 
 	@Override
@@ -90,6 +95,10 @@ public abstract class PlayerMessageHandler extends Handler {
 		case PlayerMessage.CURRENT_POS_UPDATE:
 			final double currentPos = PlayerMessage.getCurrentPos(msg);
 			playerCurrentPosUpdate(currentPos);
+			break;
+			
+		case PlayerMessage.SOUGHT:
+			playerSought();
 			break;
 
 		default:

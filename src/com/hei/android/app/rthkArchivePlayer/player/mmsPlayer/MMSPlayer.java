@@ -387,6 +387,8 @@ public class MMSPlayer implements AudioPlayer {
 							_decoder.stop();
 							_decoder.start(reader);
 							_seekTime = -1;
+							final Message msg = PlayerMessage.createSoughTMessage();
+							_messageHandler.sendMessage(msg);
 						}
 						else {
 							Log.d(LOG, "Seek to " + _seekTime + " failed.");

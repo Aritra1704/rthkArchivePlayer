@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -27,13 +28,14 @@ import android.widget.TextView;
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel;
 import com.hei.android.app.rthkArchivePlayer.model.AsxModel.AsxEntryModel;
 import com.hei.android.app.rthkArchivePlayer.model.EpisodeModel;
+import com.hei.android.app.rthkArchivePlayer.model.ProgrammeModel;
 import com.hei.android.app.rthkArchivePlayer.player.asfPlayer.AsfFileDbAdapter;
 import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.MMSInputStream;
 import com.hei.android.app.widget.actionBar.ActionBarActivity;
 
 public class DownloadActivity extends ActionBarActivity {
 	private static final String TAG = "DownloadActivity";
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy", Locale.US);
 
 	private TextView _downloadingText;
 	private TextView _infoText;
@@ -65,15 +67,15 @@ public class DownloadActivity extends ActionBarActivity {
 		final Intent intent = getIntent();
 		final EpisodeModel episode = (EpisodeModel) intent.getSerializableExtra(getString(R.string.key_episode));
 
-		final String programmeName = episode.getProgrammeName();
+		final ProgrammeModel programme = episode.getProgramme();
+		final String programmeName = programme.getName();
 		final String name = episode.getName();
 		final Date date = episode.getDate();
 		final String dateStr = DATE_FORMAT.format(date);
 		setTitle(getString(R.string.title_download) + " - " + programmeName);
 		_infoText.setText(programmeName + " " + dateStr + "\n" + name);
 
-		final String asxUrl = episode.getAsxUrl();
-		new Downloader(this, asxUrl, 10, _wifiLock, _handler).start();
+		new Downloader(this, episode, 10, _wifiLock, _handler).start();
 	}
 
 	private void scheduleDownloadingTextAnimation() {
@@ -237,16 +239,16 @@ public class DownloadActivity extends ActionBarActivity {
 
 	protected static class Downloader extends Thread {
 		private final Context _context;
-		private final String _asxUrl;
+		private final EpisodeModel _episode;
 		private final int _threadNum;
 		private final WifiLock _wifiLock;
 		private final DownloadMessageHandler _handler;
 		private int _threadFinishedCount;
 
-		public Downloader (final Context context, final String asxUrl, final int threadNum, final WifiLock wifiLock, final DownloadMessageHandler handler) {
+		public Downloader (final Context context, final EpisodeModel episode, final int threadNum, final WifiLock wifiLock, final DownloadMessageHandler handler) {
 			super("DownloadActivity.Downloader");
 			_context = context;
-			_asxUrl = asxUrl;
+			_episode = episode;
 			_threadNum = threadNum;
 			_wifiLock = wifiLock;
 			_handler = handler;
@@ -255,7 +257,15 @@ public class DownloadActivity extends ActionBarActivity {
 		@Override
 		public void run() {
 			_wifiLock.acquire();
-			final AsxModel asx = AsxModel.createModelFromUrl(_asxUrl);
+			final String asxUrl = _episode.getAsxUrl();
+			AsxModel asx;
+			try {
+				asx = AsxModel.createModelFromUrl(asxUrl);
+			} catch (IOException e) {
+				e.printStackTrace();
+				_handler.sendDownloadFailedMessage();
+				return;
+			}
 			final List<AsxEntryModel> entries = asx.getEntries();
 			final String[] playlist = new String[entries.size()];
 			for (int i = 0; i<playlist.length; i++) {
@@ -294,6 +304,7 @@ public class DownloadActivity extends ActionBarActivity {
 						if(externalStorageState.equals(Environment.MEDIA_REMOVED) ) {
 							_handler.sendDownloadFailedMessage();
 							_wifiLock.release();
+							mmsStream.close();
 							return;
 						}
 						final File sdCardRoot = Environment.getExternalStorageDirectory();
@@ -305,7 +316,7 @@ public class DownloadActivity extends ActionBarActivity {
 						}
 
 						final String rthkPath = rthkFolder.getPath();
-						final String filename = URLEncoder.encode(url);
+						final String filename = URLEncoder.encode(url, "utf-8");
 						filePath = rthkPath + "/" + filename;
 
 						files = new ArrayList<FileOutputStream>(_threadNum);

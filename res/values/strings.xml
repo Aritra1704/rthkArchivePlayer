@@ -15,20 +15,22 @@
     
     <string name="programme_item_star_description">加到我的最愛</string>
     <string name="episode_item_download_description">下載</string>
-    <string name="download_icon_description">下載</string>
     
     <string name="ok">確定</string>
     <string name="alert_internet_fail_title">未能取得節目列表</string>
     <string name="alert_internet_fail_message">請檢查裝置是否連接到互聯網。</string>
     <string name="alert_no_asx_url">網上直播完畢稍後提供節目重溫。</string>
     
+    <string name="download_icon_description">下載</string>
     <string name="download_downloading_text">下載中</string>
     <string name="download_success">下載完成</string>
     <string name="download_failed">下載失敗</string>
     <string name="download_progress_text_default">0%</string>
     
-    <string name="play">Play</string>
-    <string name="pause">Pause</string>
-    <string name="stop">Stop</string>
-    <string name="skip">Skip 5min</string>
+    <string name="player_icon_description">香港電台節目重溫</string>
+    <string name="player_play_pause_description">播放/暫停</string>
+    <string name="player_stop_description">停止</string>
+    <string name="player_previous_description">上一節</string>
+    <string name="player_next_description">下一節</string>
+    <string name="player_status_buffering">緩衝中&#8230;</string>
 </resources>

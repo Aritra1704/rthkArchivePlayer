@@ -12,6 +12,7 @@ public class PlayerMessage {
 	public static final int STOP = 2;
 	public static final int EXCEPTION = 3;
 	public static final int CURRENT_POS_UPDATE = 4;
+	public static final int SOUGHT = 5;
 	
 	private static final String START_LENGTH = "length";
 
@@ -72,6 +73,12 @@ public class PlayerMessage {
 		data.putDouble(CURRENT_POS_UPDATE_POS, pos);
 		msg.setData(data);
 		
+		return msg;
+	}
+	
+	public static Message createSoughTMessage() {
+		final Message msg =  new Message();
+		msg.what = SOUGHT;
 		return msg;
 	}
 

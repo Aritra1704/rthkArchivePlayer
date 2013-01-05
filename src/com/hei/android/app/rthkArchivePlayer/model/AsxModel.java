@@ -27,7 +27,7 @@ public class AsxModel {
 	private final String _author;
 	private final List<AsxEntryModel> _entries;
 
-	public static AsxModel createModelFromUrl(final String url) {
+	public static AsxModel createModelFromUrl(final String url) throws IOException{
 		try {
 			/* Create a URL we want to load some xml-data from. */
 			final URL asxUrl = new URL(url);
@@ -54,7 +54,7 @@ public class AsxModel {
 			final AsxModel model = handeler.getModel();
 			return model;
 		} catch (final Exception e) {
-			throw new RuntimeException("Failed to parse " + url, e);
+			throw new IOException("Failed to parse " + url, e);
 
 		}
 	}

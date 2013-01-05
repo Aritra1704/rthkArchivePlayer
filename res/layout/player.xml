@@ -2,28 +2,66 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingLeft="6dp"
+    android:paddingRight="6dp" >
 
-    <Button
-        android:id="@+id/playButton"
+    <ImageView
+        android:layout_width="256dp"
+        android:layout_height="256dp"
+        android:contentDescription="@string/player_icon_description"
+        android:src="@drawable/radio" />
+
+    <TextView
+        android:id="@+id/player_title_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@+string/play" />
+        android:gravity="center"
+        android:textColor="@color/text_color" />
 
     <SeekBar
-        android:id="@+id/playerSeekBar"
+        android:id="@+id/player_seek_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-    
-    <Button
-        android:id="@+id/playeSkipButton"
+
+    <TextView
+        android:id="@+id/player_length_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@+string/skip" />
-    
-    <TextView 
-        android:id="@+id/playerLengthText"
+        android:gravity="left"
+        android:textColor="@color/text_color" />
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingTop="6dp" >
+
+        <ImageButton
+            android:id="@+id/player_previous_button"
+            style="@style/PlayerButton"
+            android:contentDescription="@string/player_previous_description"
+            android:src="@drawable/player_previous" />
+
+        <ImageButton
+            android:id="@+id/player_play_pause_button"
+            style="@style/PlayerButton"
+            android:contentDescription="@string/player_play_pause_description"
+            android:src="@drawable/player_pause" />
+
+        <ImageButton
+            android:id="@+id/player_stop_button"
+            style="@style/PlayerButton"
+            android:contentDescription="@string/player_stop_description"
+            android:src="@drawable/player_stop" />
+
+        <ImageButton
+            android:id="@+id/player_next_button"
+            style="@style/PlayerButton"
+            android:contentDescription="@string/player_next_description"
+            android:src="@drawable/player_next" />
+    </LinearLayout>
 
 </LinearLayout>

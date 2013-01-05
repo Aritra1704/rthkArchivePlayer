@@ -1,9 +1,15 @@
 package com.hei.android.app.rthkArchivePlayer;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -11,8 +17,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -35,14 +42,20 @@ import com.hei.android.app.rthkArchivePlayer.model.ProgrammeModel;
 import com.hei.android.app.widget.actionBar.ActionBarListActivity;
 
 public class SearchActivity extends ActionBarListActivity {
-	private static final String SEARCH_URL = "http://search.rthk.org.hk/search/search_archive_2010.php?archivetype=all&keyword=";
+	private static final String ARCHIVE_URL = "http://programme.rthk.hk/channel/radio/index_archive.php";
+	
+	private List<ProgrammeModel> _programmes;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setTitle(R.string.title_search);
+
+		final LoadProgramListTask loadProgramTask = new LoadProgramListTask(this);
+		loadProgramTask.execute();
 	}
 	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater menuInflater = getMenuInflater();
@@ -53,19 +66,32 @@ public class SearchActivity extends ActionBarListActivity {
 			searchView.setOnQueryTextListener(new OnQueryTextListener() {
 
 				@Override
-				public boolean onQueryTextChange(String newText) {
-					return false;
+				public boolean onQueryTextChange(String query) {
+					if(query.equals("")) {
+						final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(SearchActivity.this, _programmes);
+						setListAdapter(adapter);
+						return true;
+					}
+
+					final Pattern pattern = Pattern.compile(".*" + query + ".*", Pattern.CASE_INSENSITIVE);
+					final List<ProgrammeModel> filtered = new ArrayList<ProgrammeModel>();
+					for (ProgrammeModel programme : _programmes) {
+						final String name = programme.getName();
+						final Matcher matcher = pattern.matcher(name);
+						if(matcher.matches()) {
+							filtered.add(programme);
+						}
+					}
+					
+					final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(SearchActivity.this, filtered);
+					setListAdapter(adapter);
+
+					return true;
 				}
 
 				@Override
 				public boolean onQueryTextSubmit(final String query) {
-					if(query.equals("")) {
-						return false;
-					}
-
-					new QueryTask(SearchActivity.this).execute(new String[]{query});
-
-					return true;
+					return false;
 				}
 			});
 		}
@@ -83,12 +109,30 @@ public class SearchActivity extends ActionBarListActivity {
 			
 			if(intent != null) {
 				final String query = intent.getAction();
-				new QueryTask(SearchActivity.this).execute(new String[]{query});
+				final Pattern pattern = Pattern.compile(".*" + query + ".*", Pattern.CASE_INSENSITIVE);
+				final List<ProgrammeModel> filtered = new ArrayList<ProgrammeModel>();
+				for (ProgrammeModel programme : _programmes) {
+					final String name = programme.getName();
+					final Matcher matcher = pattern.matcher(name);
+					if(matcher.matches()) {
+						filtered.add(programme);
+					}
+				}
+				final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(this, filtered);
+				setListAdapter(adapter);
 			}
 		}
 
 		return super.onOptionsItemSelected(item);
-	}	
+	}
+	
+	public List<ProgrammeModel> getProgrammes() {
+		return _programmes;
+	}
+	
+	public void setProgrammes(List<ProgrammeModel> programmes) {
+		_programmes = programmes;
+	}
 
 	private static class ProgrammeItemsAdapter extends BaseAdapter {
 		private final Context _context;
@@ -164,7 +208,7 @@ public class SearchActivity extends ActionBarListActivity {
 				@Override
 				public void onClick(View v) {
 					final boolean starred = model.isStarred();
-					model.setStarred(!starred);
+					model.setStarred(_context, !starred);
 					if(starred) {
 						starButton.setImageResource(R.drawable.programme_item_star_empty);
 					}
@@ -197,41 +241,65 @@ public class SearchActivity extends ActionBarListActivity {
 		}
 
 	}
-
-	private static class QueryTask extends AsyncTask<String, Void, List<ProgrammeModel>> {
-		private final ListActivity _activity;
-
-		public QueryTask(final ListActivity activity) {
-			_activity = activity;
+	
+	private static class LoadProgramListTask extends AsyncTask<Void, Void, Map<String, List<ProgrammeModel>>> {
+		private static final Map<String, String> CLASS_NAMES;
+		static {
+			CLASS_NAMES = new LinkedHashMap<String, String>();
+			CLASS_NAMES.put("第一台", "radio1");
+			CLASS_NAMES.put("第二台", "radio2");
+			CLASS_NAMES.put("第三台", "radio3");
+			CLASS_NAMES.put("第四台", "radio4");
+			CLASS_NAMES.put("第五台", "radio5");
+			CLASS_NAMES.put("普通話台", "pth");
 		}
+		
+		private static final Pattern PROGRAM_URL_PATTERN = Pattern.compile("http://programme.rthk.hk/channel/radio/programme.php\\?name=(.*)\\&.*");
 
+		private final SearchActivity _activity;
+		private final ProgressDialog _loadingDialog;
+
+		public LoadProgramListTask(final SearchActivity activity) {
+			_activity = activity;
+			_loadingDialog = ProgressDialog.show(_activity, "載入中", "正在載入節目表，請稍侯...", true);
+		}
+		
 		@Override
-		protected List<ProgrammeModel> doInBackground(String... params) {
-			final List<ProgrammeModel> programmes = new ArrayList<ProgrammeModel>();
-
-			if(params.length > 0) {
-				final String query = URLEncoder.encode(params[0]);
-				final Connection connection = Jsoup.connect(SEARCH_URL + query);
-				try {
-					final Document document = connection.get();
-					final Elements links = document.select("a");
+		protected Map<String, List<ProgrammeModel>> doInBackground(Void... params) {
+			final Map<String, List<ProgrammeModel>> programmes = new LinkedHashMap<String, List<ProgrammeModel>>();
+			final Connection connection = Jsoup.connect(ARCHIVE_URL);
+			try {
+				final Document document = connection.get();
+				final Set<Entry<String, String>> classnames = CLASS_NAMES.entrySet();
+				for (Entry<String, String> entry : classnames) {
+					final String channel = entry.getKey();
+					final String classname = entry.getValue();
+					final List<ProgrammeModel> models = new LinkedList<ProgrammeModel>();
+					final Elements links = document.select("a." + classname);
 					for (final Element link : links) {
-						final String href = link.attr("href");
+						
 						final String text = link.text();
+						final String href = link.attr("href");
+						final Matcher matcher = PROGRAM_URL_PATTERN.matcher(href);
+						if(matcher.matches()) {
+							final String id = matcher.group(1);
+							final ProgrammeModel programme = new ProgrammeModel(_activity, text, id);
+							models.add(programme);
+						}
 
-						final ProgrammeModel programme = new ProgrammeModel(text, href);
-						programmes.add(programme);
 					}
-				} catch (final IOException e) {
-					return null;
+					programmes.put(channel, models);
 				}
+			} catch (final IOException e) {
+				return null;
 			}
-
+			
 			return programmes;
 		}
-
+		
 		@Override
-		protected void onPostExecute(List<ProgrammeModel> result) {
+		protected void onPostExecute(Map<String, List<ProgrammeModel>> result) {
+			_loadingDialog.dismiss();
 			if(result == null) {
 				new AlertDialog.Builder(_activity)
 				.setIcon(R.drawable.alert_dialog_icon)
@@ -269,10 +337,101 @@ public class SearchActivity extends ActionBarListActivity {
 				return;
 			}
 
-			final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(_activity, result);
+			List<ProgrammeModel> allProgramesList = new ArrayList<ProgrammeModel>();
+			final Set<Entry<String, List<ProgrammeModel>>> channelModel = result.entrySet();
+			for (Entry<String, List<ProgrammeModel>> entry : channelModel) {
+				final List<ProgrammeModel> programes = entry.getValue();
+				allProgramesList.addAll(programes);
+			}
+			
+			_activity.setProgrammes(allProgramesList);
+			final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(_activity, allProgramesList);
 			_activity.setListAdapter(adapter);
 		}
-
 	}
+
+//	TODO: Remove QueryTask
+//	private static final String SEARCH_URL = "http://search.rthk.org.hk/search/search_archive_2010.php?archivetype=all&keyword=";
+//	private static class QueryTask extends AsyncTask<String, Void, List<ProgrammeModel>> {
+//		private final ListActivity _activity;
+//
+//		public QueryTask(final ListActivity activity) {
+//			_activity = activity;
+//		}
+//
+//		@Override
+//		protected List<ProgrammeModel> doInBackground(String... params) {
+//			final List<ProgrammeModel> programmes = new ArrayList<ProgrammeModel>();
+//
+//			if(params.length > 0) {
+//				final String query;
+//				try {
+//					query = URLEncoder.encode(params[0], "UTF-8");
+//				} catch (UnsupportedEncodingException e1) {
+//					return null;
+//				}
+//				final Connection connection = Jsoup.connect(SEARCH_URL + query);
+//				try {
+//					final Document document = connection.get();
+//					final Elements links = document.select("a");
+//					for (final Element link : links) {
+//						final String href = link.attr("href");
+//						final String text = link.text();
+//
+//						final ProgrammeModel programme = new ProgrammeModel(text, href);
+//						programmes.add(programme);
+//					}
+//				} catch (final IOException e) {
+//					return null;
+//				}
+//			}
+//
+//			return programmes;
+//		}
+//
+//		@Override
+//		protected void onPostExecute(List<ProgrammeModel> result) {
+//			if(result == null) {
+//				new AlertDialog.Builder(_activity)
+//				.setIcon(R.drawable.alert_dialog_icon)
+//				.setTitle("搜尋失敗")
+//				.setMessage("請檢查裝置是否連接到互聯網。")
+//				.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+//
+//					@Override
+//					public void onClick(final DialogInterface arg0, final int arg1) {
+//
+//					}
+//
+//				})
+//				.create()
+//				.show();
+//
+//				return;
+//			}
+//
+//			if(result.isEmpty()) {
+//				new AlertDialog.Builder(_activity)
+//				.setIcon(R.drawable.alert_dialog_icon)
+//				.setTitle("搜尋完成")
+//				.setMessage("沒有相關的結果。")
+//				.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+//
+//					@Override
+//					public void onClick(final DialogInterface arg0, final int arg1) {
+//
+//					}
+//
+//				})
+//				.create()
+//				.show();
+//				return;
+//			}
+//
+//			final ProgrammeItemsAdapter adapter = new ProgrammeItemsAdapter(_activity, result);
+//			_activity.setListAdapter(adapter);
+//		}
+//
+//	}
 
 }
