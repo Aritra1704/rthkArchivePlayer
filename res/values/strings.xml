@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RTHK 節目重溫</string>
+
+    <string name="ok">確定</string>
+    <string name="cancel">取消</string>
     
     <string name="title_search">搜尋</string>
     <string name="title_download">下載</string>
+    <string name="title_starred">我的最愛</string>
     
     <string name="home_search">搜尋</string>
     <string name="home_starred">我的最愛</string>
@@ -16,7 +20,6 @@
     <string name="programme_item_star_description">加到我的最愛</string>
     <string name="episode_item_download_description">下載</string>
     
-    <string name="ok">確定</string>
     <string name="alert_internet_fail_title">未能取得節目列表</string>
     <string name="alert_internet_fail_message">請檢查裝置是否連接到互聯網。</string>
     <string name="alert_no_asx_url">網上直播完畢稍後提供節目重溫。</string>
@@ -33,4 +36,8 @@
     <string name="player_previous_description">上一節</string>
     <string name="player_next_description">下一節</string>
     <string name="player_status_buffering">緩衝中&#8230;</string>
+    
+    <string name="starred_unstar_dialog_header">移除星號</string>
+    <string name="starred_unstar_dialog_text">你確定要把 ％s 在我的最愛清單內移除？</string>
+    <string name="starred_item_unstar_description">移除星號</string>
 </resources>

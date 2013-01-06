@@ -19,9 +19,20 @@ public class ProgrammeModel implements Serializable {
 	private static final Object STARRED_LOCK = new Object();
 	private static Map<String, String> STARRED_CACHE;
 	
+	private static void ensureStarredCacheLoaded(Context context) {
+		if(STARRED_CACHE == null) {
+			synchronized (STARRED_LOCK) {
+				if(STARRED_CACHE == null) {
+					STARRED_CACHE = new StarredDatabase(context).getStarred();
+				}
+			}
+		}
+	}
+	
 	public static List<ProgrammeModel> getStarredProgrames(Context context) {
+		ensureStarredCacheLoaded(context);
 		final Set<Entry<String, String>> entrySet;
-		synchronized (STARRED_CACHE) {
+		synchronized (STARRED_LOCK) {
 			entrySet = STARRED_CACHE.entrySet();
 		}
 		
@@ -39,9 +50,7 @@ public class ProgrammeModel implements Serializable {
 	private final String _id;
 
 	public ProgrammeModel(final Context context, final String name, final String id) {
-		if(STARRED_CACHE == null) {
-			STARRED_CACHE = new StarredDatabase(context).getStarred();
-		}
+		ensureStarredCacheLoaded(context);
 
 		_name = name;
 		_id = id;
@@ -83,7 +92,7 @@ public class ProgrammeModel implements Serializable {
 
 	private static class StarredDatabase extends SQLiteOpenHelper {
 		private static final int DATABASE_VERSION = 1;
-		private static final String DATABASE_NAME = "starred_programess.db";
+		private static final String DATABASE_NAME = "starred_programmes.db";
 
 		private static final String TABLE = "starred";
 		private static final String ID = "id";
