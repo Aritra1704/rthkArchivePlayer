@@ -69,4 +69,27 @@ public class EpisodeModel implements Serializable {
 
 		return _asxUrl;
 	}
+	
+	@Override
+	public int hashCode() {
+		return _programme.hashCode() + _date.hashCode() * 31;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o != null && o instanceof EpisodeModel) {
+			final EpisodeModel that = (EpisodeModel) o;
+			final ProgrammeModel programme = that.getProgramme();
+			final Date date = that.getDate();
+			
+			return _programme.equals(programme) && _date.equals(date);
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public String toString() {
+		return "{programme=" + _programme + ", name=" + _name + ", date=" + _date +", asxUrl=" + _asxUrl + "}";
+	}
 }

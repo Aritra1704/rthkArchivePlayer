@@ -49,7 +49,7 @@ public class SearchActivity extends ActionBarListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setTitle(R.string.title_search);
+		setTitle(R.string.search_title);
 
 		final LoadProgramListTask loadProgramTask = new LoadProgramListTask(this);
 		loadProgramTask.execute();

@@ -16,8 +16,10 @@
 
 package com.hei.android.app.widget.actionBar;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.ActionProvider;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -134,12 +136,14 @@ public class ActionBarMenuItem implements MenuItem {
         return null;
     }
 
-    public MenuItem setActionProvider(ActionProvider actionProvider) {
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public MenuItem setActionProvider(ActionProvider actionProvider) {
         // Noop
         return this;
     }
 
-    public ActionProvider getActionProvider() {
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public ActionProvider getActionProvider() {
         // Noop
         return null;
     }
@@ -154,12 +158,14 @@ public class ActionBarMenuItem implements MenuItem {
         return false;
     }
 
-    public boolean isActionViewExpanded() {
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public boolean isActionViewExpanded() {
         // Noop
         return false;
     }
 
-    @Override
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	@Override
     public MenuItem setOnActionExpandListener(OnActionExpandListener onActionExpandListener) {
         // Noop
         return this;

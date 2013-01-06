@@ -22,7 +22,7 @@ public class StarredActivity extends ActionBarListActivity {
 	 @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setTitle(R.string.title_starred);
+		setTitle(R.string.starred_title);
 		
 		final List<ProgrammeModel> starredProgrames = ProgrammeModel.getStarredProgrames(this);
 		final StarredItemAdapter starredItemAdapter = new StarredItemAdapter(this, starredProgrames);

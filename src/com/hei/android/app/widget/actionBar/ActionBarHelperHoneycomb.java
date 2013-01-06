@@ -16,8 +16,10 @@
 
 package com.hei.android.app.widget.actionBar;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,6 +31,7 @@ import com.hei.android.app.rthkArchivePlayer.R;
  * An extension of {@link ActionBarHelper} that provides Android 3.0-specific functionality for
  * Honeycomb tablets. It thus requires API level 11.
  */
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class ActionBarHelperHoneycomb extends ActionBarHelper {
     private Menu mOptionsMenu;
     private View mRefreshIndeterminateProgressView = null;

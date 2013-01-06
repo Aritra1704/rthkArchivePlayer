@@ -28,6 +28,6 @@ public class HomeActivity extends ActionBarActivity {
 		_searchButton.setOnClickListener(new StartActivityOnClickListener(SearchActivity.class));
 		_starredButton.setOnClickListener(new StartActivityOnClickListener(StarredActivity.class));
 		_downloadsButton.setOnClickListener(new StartActivityOnClickListener(null)); //TODO: add starred activity
-		_historyButton.setOnClickListener(new StartActivityOnClickListener(null)); //TODO: add starred activity
+		_historyButton.setOnClickListener(new StartActivityOnClickListener(HistoryActivity.class));
 	}
 }

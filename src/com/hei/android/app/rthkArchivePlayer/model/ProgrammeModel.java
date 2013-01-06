@@ -89,6 +89,25 @@ public class ProgrammeModel implements Serializable {
 			}
 		}
 	}
+	
+	@Override
+	public int hashCode() {
+		return _id.hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o != null && (o instanceof ProgrammeModel)) {
+			final String id = ((ProgrammeModel) o).getId();
+			return _id.equals(id);
+		}
+		return super.equals(o);
+	}
+	
+	@Override
+	public String toString() {
+		return "{id=" + _id + ", name=" + _name + "}";
+	}
 
 	private static class StarredDatabase extends SQLiteOpenHelper {
 		private static final int DATABASE_VERSION = 1;

@@ -5,10 +5,8 @@
     <string name="ok">確定</string>
     <string name="cancel">取消</string>
     
-    <string name="title_search">搜尋</string>
-    <string name="title_download">下載</string>
-    <string name="title_starred">我的最愛</string>
     
+    <!-- HomeActivity -->
     <string name="home_search">搜尋</string>
     <string name="home_starred">我的最愛</string>
     <string name="home_downloads">下載</string>
@@ -17,19 +15,30 @@
     <string name="menu_search">搜尋</string>
     <string name="menu_star">加到我的最愛</string>
     
+    
+    <!-- SearchActivity -->
+    <string name="search_title">搜尋</string>
     <string name="programme_item_star_description">加到我的最愛</string>
+
+    
+    <!-- ProgrammeActivity -->
     <string name="episode_item_download_description">下載</string>
     
     <string name="alert_internet_fail_title">未能取得節目列表</string>
     <string name="alert_internet_fail_message">請檢查裝置是否連接到互聯網。</string>
     <string name="alert_no_asx_url">網上直播完畢稍後提供節目重溫。</string>
     
+    
+    <!-- DownloadActivity -->
+    <string name="download_title">下載</string>
     <string name="download_icon_description">下載</string>
     <string name="download_downloading_text">下載中</string>
     <string name="download_success">下載完成</string>
     <string name="download_failed">下載失敗</string>
     <string name="download_progress_text_default">0%</string>
     
+    
+    <!-- PlayerActivity -->
     <string name="player_icon_description">香港電台節目重溫</string>
     <string name="player_play_pause_description">播放/暫停</string>
     <string name="player_stop_description">停止</string>
@@ -37,7 +46,17 @@
     <string name="player_next_description">下一節</string>
     <string name="player_status_buffering">緩衝中&#8230;</string>
     
+    
+    <!-- StarredActivity -->
+    <string name="starred_title">我的最愛</string>
     <string name="starred_unstar_dialog_header">移除星號</string>
-    <string name="starred_unstar_dialog_text">你確定要把 ％s 在我的最愛清單內移除？</string>
+    <string name="starred_unstar_dialog_text">你確定要把 %s 在我的最愛清單內移除？</string>
     <string name="starred_item_unstar_description">移除星號</string>
+    
+    
+    <!-- HistoryActivity -->
+    <string name="history_title">最近收聽</string>
+    <string name="history_delete_dialog_header">移除記錄</string>
+    <string name="history_delete_dialog_text">你確定要把 %s 在最近收聽清單內移除？</string>
+    <string name="history_item_delete_description">移除記錄</string>
 </resources>

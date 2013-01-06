@@ -32,6 +32,7 @@ import com.hei.android.app.rthkArchivePlayer.player.AudioPlayer;
 import com.hei.android.app.rthkArchivePlayer.player.asfPlayer.AsfPlayer;
 import com.hei.android.app.rthkArchivePlayer.player.message.PlayerMessageHandler;
 import com.hei.android.app.rthkArchivePlayer.player.mmsPlayer.MMSPlayer;
+import com.hei.android.app.rthkArchivePlayer.repository.HistoryRepository;
 import com.hei.android.app.widget.actionBar.ActionBarActivity;
 
 public class PlayerActivity extends ActionBarActivity {
@@ -45,15 +46,15 @@ public class PlayerActivity extends ActionBarActivity {
 	private TextView _titleText;
 	private TextView _lengthText;
 	private SeekBar _seekBar;
-	
+
 	private AudioPlayer _player;
 	private PlayerMessageHandler _messagHandler;
-	
+
 	private AsxModel _asx;
 	private int _playingItem;
 	private String _length;
 	private String _title;
-	
+
 	private boolean _isPlaying = false;
 	private boolean _isPaused = false;
 	private boolean _isSeeking = false;
@@ -61,7 +62,7 @@ public class PlayerActivity extends ActionBarActivity {
 	private boolean _previous = false;
 
 	private WifiLock _wifiLock;
-	
+
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -84,33 +85,35 @@ public class PlayerActivity extends ActionBarActivity {
 		_titleText = (TextView) findViewById(R.id.player_title_text);
 		_lengthText = (TextView) findViewById(R.id.player_length_text);
 		_seekBar = (SeekBar) findViewById(R.id.player_seek_bar);
-		
+
 		_previousButton.setEnabled(false);
 		_nextButton.setEnabled(false);
 		_stopButton.setEnabled(false);
 		_seekBar.setEnabled(false);
-		
+
 		final Serializable serializable = intent.getSerializableExtra(getString(R.string.key_episode));
 		if(serializable != null) {
-				final EpisodeModel episode = (EpisodeModel) serializable;
-				final ProgrammeModel programme = episode.getProgramme();
-				final String programmeName = programme.getName();
-				final Date date = episode.getDate();
-				_title = programmeName + " " + DATE_FORMAT.format(date);
-				_titleText.setText(_title);
-				setTitle(_title);
+			final EpisodeModel episode = (EpisodeModel) serializable;
+			final ProgrammeModel programme = episode.getProgramme();
+			final String programmeName = programme.getName();
+			final Date date = episode.getDate();
+			_title = programmeName + " " + DATE_FORMAT.format(date);
+			_titleText.setText(_title);
+			setTitle(_title);
+
+			HistoryRepository.getInstance(this).addHistory(this, episode);
 		}
-		
+
 		final WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		_wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, PlayerActivity.class.getName());
-		
+
 		initListeners();
-		
+
 		final String url = data.toString();
 		final LoadAsxModelTask loadAsxModelTask = new LoadAsxModelTask();
 		loadAsxModelTask.execute(new String[]{url});
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		stop();
@@ -129,7 +132,7 @@ public class PlayerActivity extends ActionBarActivity {
 					start();
 					return;
 				}
-				
+
 				if(_previous) {
 					_previous = false;
 					_seekBar.setProgress(0);
@@ -137,13 +140,13 @@ public class PlayerActivity extends ActionBarActivity {
 					start();
 					return;
 				}
-				
+
 				final List<AsxEntryModel> entries = _asx.getEntries();
 				final int size = entries.size();
 				if(_playingItem < size) {
 					next();
 					start();
-					
+
 				}
 				else {
 					_playButton.setImageResource(R.drawable.player_play);
@@ -208,21 +211,21 @@ public class PlayerActivity extends ActionBarActivity {
 				}
 			}
 		});
-		
+
 		_seekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-			
+
 			@Override
 			public void onStopTrackingTouch(SeekBar seekBar) {
 				final int time = seekBar.getProgress();
 				_player.seek(time);
 				_lengthText.setText(R.string.player_status_buffering);
 			}
-			
+
 			@Override
 			public void onStartTrackingTouch(SeekBar seekBar) {
 				_isSeeking = true;
 			}
-			
+
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress,
 					boolean fromUser) {
@@ -232,25 +235,25 @@ public class PlayerActivity extends ActionBarActivity {
 				}
 			}
 		});
-		
+
 		_stopButton.setOnClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				stop();
 			}
 		});
-		
+
 		_previousButton.setOnClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				previous();
 			}
 		});
-		
+
 		_nextButton.setOnClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				next();
@@ -261,15 +264,15 @@ public class PlayerActivity extends ActionBarActivity {
 	private void start() {
 		final List<AsxEntryModel> entries = _asx.getEntries();
 		final AsxEntryModel asxEntryModel = entries.get(_playingItem - 1);
-		
+
 		final String url = asxEntryModel.getRef();
 		_lengthText.setText(R.string.player_status_buffering);
 		_seekBar.setEnabled(true);
-		
+
 		try {
 			_player = new AsfPlayer(this, _messagHandler, -1);
 			_player.playAsync(url);
-			
+
 		}
 		catch (Exception e) {
 			_wifiLock.acquire();
@@ -277,15 +280,15 @@ public class PlayerActivity extends ActionBarActivity {
 			_player.playAsync(url);
 		}
 	}
-	
-	
+
+
 	private void pause() {
 		_wifiLock.release();
 		_playButton.setImageResource(R.drawable.player_play);
 		_isPaused = true;
 		_player.pause();
 	}
-	
+
 	private void resume() {
 		_wifiLock.acquire();
 		_playButton.setImageResource(R.drawable.player_pause);
@@ -295,7 +298,9 @@ public class PlayerActivity extends ActionBarActivity {
 
 
 	private void stop() {
-		_wifiLock.release();
+		if(_wifiLock.isHeld()) {
+			_wifiLock.release();
+		}
 		if (_player != null) {
 			_player.stop();
 			_player = null;
@@ -303,7 +308,7 @@ public class PlayerActivity extends ActionBarActivity {
 			_seekBar.setEnabled(false);
 		}
 	}
-	
+
 	private void next() {
 		final List<AsxEntryModel> entries = _asx.getEntries();
 		final int max = entries.size();
@@ -313,7 +318,7 @@ public class PlayerActivity extends ActionBarActivity {
 		_next = true;
 		stop();
 	}
-	
+
 	private void previous() {
 		if(_playingItem <= 1) {
 			throw new RuntimeException("Invalid playing item = " + _playingItem);
@@ -327,31 +332,31 @@ public class PlayerActivity extends ActionBarActivity {
 		final int remainSec = ((int) sec) % 60;
 		return String.format("%1$02d:%2$02d", min, remainSec);
 	}
-	
+
 	private void playingItemIncrement() {
 		setPlayingItem(_playingItem + 1);
 	}
-	
+
 	private void playingItemDecrement() {
 		setPlayingItem(_playingItem - 1);
 	}
-	
+
 	private void setPlayingItem(int playingItem) {
 		final int max = _asx.getEntries().size();
 		if(playingItem > max || playingItem < 1) {
 			throw new RuntimeException("Invalid playint item = " + playingItem); 
 		}
-		
+
 		_previousButton.setEnabled(playingItem > 1);
 		_nextButton.setEnabled(playingItem < max);
-		
+
 		final String title = _title + " (" + playingItem + "/" + max + ")";
 		setTitle(title);
 		_titleText.setText(title);
-		
+
 		_playingItem = playingItem;
 	}
-	
+
 	private class LoadAsxModelTask extends AsyncTask<String, Void, AsxModel> {
 		@Override
 		protected AsxModel doInBackground(String... urls) {
@@ -359,14 +364,14 @@ public class PlayerActivity extends ActionBarActivity {
 				return null;
 			}
 			try {
-			final AsxModel asxModel = AsxModel.createModelFromUrl(urls[0]);
-			return asxModel;
+				final AsxModel asxModel = AsxModel.createModelFromUrl(urls[0]);
+				return asxModel;
 			} catch (IOException e) {
 				Log.e(TAG, e.getMessage());
 				return null;
 			}
 		}
-		
+
 		@Override
 		protected void onPostExecute(AsxModel model) {
 			if(model == null) {
@@ -387,14 +392,14 @@ public class PlayerActivity extends ActionBarActivity {
 			}
 			else {
 				Log.d(TAG, model.toString());
-				
+
 				if(_title == null) {
 					_title = _asx.getTitle();
 				}
 
 				_asx = model;
 				setPlayingItem(1);
-				
+
 				start();
 			}
 		}

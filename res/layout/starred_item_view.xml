@@ -27,6 +27,6 @@
 		android:scaleType="center"
 		android:background="@android:color/transparent"
 		android:contentDescription="@string/starred_item_unstar_description"
-		android:src="@drawable/starred_item_unstar" />
+		android:src="@drawable/delete" />
 
 </LinearLayout>

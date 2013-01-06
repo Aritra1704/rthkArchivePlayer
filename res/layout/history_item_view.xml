@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingLeft="6dip"
+    android:paddingRight="6dip"
+    android:textAppearance="?android:attr/textAppearanceLarge" >
+
+    <LinearLayout
+        android:id="@+id/history_item_text"
+        android:layout_width="0dp"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/history_item_time"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:singleLine="true"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:id="@+id/history_item_name"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:gravity="center_vertical"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/history_item_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/starred_item_unstar_description"
+        android:scaleType="center"
+        android:src="@drawable/delete" />
+
+</LinearLayout>

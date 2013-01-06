@@ -72,7 +72,7 @@ public class DownloadActivity extends ActionBarActivity {
 		final String name = episode.getName();
 		final Date date = episode.getDate();
 		final String dateStr = DATE_FORMAT.format(date);
-		setTitle(getString(R.string.title_download) + " - " + programmeName);
+		setTitle(getString(R.string.download_title) + " - " + programmeName);
 		_infoText.setText(programmeName + " " + dateStr + "\n" + name);
 
 		new Downloader(this, episode, 10, _wifiLock, _handler).start();
